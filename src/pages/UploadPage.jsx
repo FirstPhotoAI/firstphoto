@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
+import FPMonogram from '../components/FPMonogram'
 import PhotoUploader, { MIN_PHOTOS } from '../components/PhotoUploader'
 import { analyzeAll } from '../utils/analyzeImage'
+import { useLang } from '../contexts/LangContext'
+import { translations } from '../i18n'
 
 /**
  * Read a File with FileReader, resize to max 800 px via canvas, and return a
  * JPEG data URL.  Keeping the preview under ~150 KB per image prevents
- * sessionStorage quota errors when analysing 5–10 photos.
+ * sessionStorage quota errors when analysing 3–5 photos.
  */
 function fileToDataUrl(file, maxDim = 800) {
   return new Promise((resolve, reject) => {
@@ -33,10 +36,12 @@ function fileToDataUrl(file, maxDim = 800) {
 }
 
 export default function UploadPage() {
-  const [photos, setPhotos] = useState([])
+  const [photos,    setPhotos]    = useState([])
   const [analyzing, setAnalyzing] = useState(false)
-  const [error, setError] = useState('')
+  const [error,     setError]     = useState('')
   const navigate = useNavigate()
+  const { lang } = useLang()
+  const T = translations[lang].upload
 
   const canAnalyze = photos.length >= MIN_PHOTOS
 
@@ -46,8 +51,6 @@ export default function UploadPage() {
     setError('')
 
     try {
-      // Convert each blob URL preview to a stable base64 data URL so that
-      // sessionStorage entries remain valid after navigation or page refresh.
       const stable = await Promise.all(
         photos.map(async (photo) => ({
           ...photo,
@@ -55,18 +58,19 @@ export default function UploadPage() {
         }))
       )
 
-      const ranked = await analyzeAll(stable)
+      const { ranked, portfolio } = await analyzeAll(stable, lang)
 
-      sessionStorage.setItem('firstphoto_results', JSON.stringify(
-        ranked.map(({ id, preview, name, rank, analysis }) => ({
+      sessionStorage.setItem('firstphoto_results', JSON.stringify({
+        ranked: ranked.map(({ id, preview, name, rank, analysis }) => ({
           id, preview, name, rank, analysis,
-        }))
-      ))
+        })),
+        portfolio,
+      }))
 
       navigate('/results')
     } catch (err) {
       console.error('Analysis failed:', err)
-      setError('Analysis failed — please try again with different photos.')
+      setError(T.error)
       setAnalyzing(false)
     }
   }
@@ -74,14 +78,15 @@ export default function UploadPage() {
   return (
     <Layout>
       <div className="mx-auto max-w-4xl px-6 py-12">
+        <FPMonogram className="mb-5 h-6 w-6 text-[rgba(15,15,15,0.38)]" />
         <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
-          Visual Study
+          {T.label}
         </p>
         <h1 className="mt-4 font-display text-4xl font-light text-[#0f0f0f]">
-          Submit Photographs
+          {T.h1}
         </h1>
         <p className="mt-3 text-sm text-[rgba(15,15,15,0.52)]">
-          Upload {MIN_PHOTOS}–10 images. Analysis runs entirely in your browser — nothing is transmitted.
+          {T.description.replace('{min}', MIN_PHOTOS)}
         </p>
 
         <div className="mt-8">
@@ -99,7 +104,7 @@ export default function UploadPage() {
             disabled={!canAnalyze || analyzing}
             className="btn-primary min-w-[220px]"
           >
-            {analyzing ? 'Reading observations…' : 'Begin observation'}
+            {analyzing ? T.btn_working : T.btn_analyze}
           </button>
         </div>
       </div>

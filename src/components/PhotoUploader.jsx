@@ -1,31 +1,36 @@
 import { useRef, useState } from 'react'
+import { useLang } from '../contexts/LangContext'
+import { translations } from '../i18n'
 
-const MIN = 5
-const MAX = 10
+export const MIN_PHOTOS = 3
+export const MAX_PHOTOS = 5
 
 export default function PhotoUploader({ photos, onPhotosChange }) {
-  const inputRef = useRef(null)
+  const inputRef         = useRef(null)
   const [dragOver, setDragOver] = useState(false)
-  const [error, setError] = useState('')
+  const [error,    setError]    = useState('')
+
+  const { lang } = useLang()
+  const T = translations[lang]?.upload ?? translations.es.upload
 
   function addFiles(fileList) {
     const incoming = Array.from(fileList).filter((f) => f.type.startsWith('image/'))
     if (!incoming.length) {
-      setError('Please upload image files only.')
+      setError(T.err_type)
       return
     }
 
-    const remaining = MAX - photos.length
+    const remaining = MAX_PHOTOS - photos.length
     if (remaining <= 0) {
-      setError(`Maximum ${MAX} photos allowed.`)
+      setError(T.err_max.replace('{max}', MAX_PHOTOS))
       return
     }
 
     const toAdd = incoming.slice(0, remaining).map((file) => ({
-      id: crypto.randomUUID(),
+      id:      crypto.randomUUID(),
       file,
       preview: URL.createObjectURL(file),
-      name: file.name,
+      name:    file.name,
     }))
 
     setError('')
@@ -39,17 +44,22 @@ export default function PhotoUploader({ photos, onPhotosChange }) {
     setError('')
   }
 
-  const canAnalyze = photos.length >= MIN && photos.length <= MAX
+  const canAnalyze = photos.length >= MIN_PHOTOS && photos.length <= MAX_PHOTOS
+  const needed     = MIN_PHOTOS - photos.length
 
   return (
     <div className="space-y-6">
+
+      {/* Drop zone */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files) }}
         onClick={() => inputRef.current?.click()}
-        className={`cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition ${
-          dragOver ? 'border-accent bg-accent/5' : 'border-surface-border hover:border-zinc-600'
+        className={`cursor-pointer border-2 border-dashed px-10 py-12 text-center transition-colors ${
+          dragOver
+            ? 'border-[rgba(15,15,15,0.45)] bg-[rgba(15,15,15,0.03)]'
+            : 'border-[rgba(15,15,15,0.18)] hover:border-[rgba(15,15,15,0.34)]'
         }`}
       >
         <input
@@ -60,44 +70,68 @@ export default function PhotoUploader({ photos, onPhotosChange }) {
           className="hidden"
           onChange={(e) => addFiles(e.target.files)}
         />
-        <p className="font-display text-lg font-semibold">Drop photos here</p>
-        <p className="mt-2 text-sm text-zinc-500">or click to browse · {MIN}–{MAX} photos</p>
+        <p className="font-display text-xl font-light text-[rgba(15,15,15,0.55)]">
+          {T.drop_title}
+        </p>
+        <p className="mt-2 text-[11px] text-[rgba(15,15,15,0.36)]">
+          {T.drop_hint}
+        </p>
       </div>
 
-      {error && <p className="text-sm text-rose-400">{error}</p>}
+      {/* Error */}
+      {error && (
+        <p className="text-[12px] text-rose-500">{error}</p>
+      )}
 
-      <div className="flex items-center justify-between text-sm text-zinc-400">
-        <span>{photos.length} / {MAX} photos</span>
-        <span className={photos.length >= MIN ? 'text-emerald-400' : 'text-zinc-500'}>
-          {photos.length >= MIN ? 'Ready to analyze' : `${MIN - photos.length} more needed`}
-        </span>
-      </div>
-
+      {/* Counter + status */}
       {photos.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="tabular-nums text-[rgba(15,15,15,0.46)]">
+            {photos.length} / {MAX_PHOTOS}
+          </span>
+          <span className={canAnalyze ? 'text-[rgba(15,15,15,0.60)]' : 'text-[rgba(15,15,15,0.36)]'}>
+            {canAnalyze
+              ? T.status_ready
+              : T.status_need.replace('{n}', needed)}
+          </span>
+        </div>
+      )}
+
+      {/* Photo grid */}
+      {photos.length > 0 && (
+        <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5">
           {photos.map((photo, i) => (
-            <div key={photo.id} className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-surface-border">
-              <img src={photo.preview} alt={`Upload ${i + 1}`} className="h-full w-full object-cover" />
+            <div
+              key={photo.id}
+              className="group relative overflow-hidden border border-[rgba(15,15,15,0.12)]"
+            >
+              <img
+                src={photo.preview}
+                alt={`${i + 1}`}
+                className="aspect-[3/4] w-full object-cover"
+              />
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); removePhoto(photo.id) }}
-                className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-xs opacity-0 transition group-hover:opacity-100"
+                className="absolute right-1.5 top-1.5 bg-[rgba(0,0,0,0.65)] px-2 py-0.5 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100"
               >
-                Remove
+                {T.btn_remove}
               </button>
-              <span className="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-0.5 text-xs">{i + 1}</span>
+              <span className="absolute bottom-1.5 left-2 text-[10px] text-white/70 tabular-nums">
+                {i + 1}
+              </span>
             </div>
           ))}
         </div>
       )}
 
+      {/* Minimum prompt */}
       {!canAnalyze && photos.length > 0 && (
-        <p className="text-center text-sm text-zinc-500">
-          Upload at least {MIN} photos to unlock analysis.
+        <p className="text-center text-[11px] text-[rgba(15,15,15,0.38)]">
+          {T.min_prompt.replace('{min}', MIN_PHOTOS)}
         </p>
       )}
+
     </div>
   )
 }
-
-export { MIN as MIN_PHOTOS, MAX as MAX_PHOTOS }

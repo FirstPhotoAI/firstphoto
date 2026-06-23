@@ -1,11 +1,18 @@
 ﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
+import FPMonogram from '../components/FPMonogram'
 import ResultsDashboard from '../components/ResultsDashboard'
+import PublishSection from '../components/PublishSection'
+import { useLang } from '../contexts/LangContext'
+import { translations } from '../i18n'
 
 export default function ResultsPage() {
   const navigate = useNavigate()
-  const [ranked, setRanked] = useState(null)
+  const [ranked,    setRanked]    = useState(null)
+  const [portfolio, setPortfolio] = useState(null)
+  const { lang } = useLang()
+  const T = translations[lang].results
 
   useEffect(() => {
     const raw = sessionStorage.getItem('firstphoto_results')
@@ -17,13 +24,18 @@ export default function ResultsPage() {
 
     try {
       const parsed = JSON.parse(raw)
-      setRanked(parsed)
+      if (Array.isArray(parsed)) {
+        setRanked(parsed)
+      } else {
+        setRanked(parsed.ranked)
+        setPortfolio(parsed.portfolio ?? null)
+      }
     } catch {
       navigate('/upload')
     }
   }, [navigate])
 
-  const studyDate = new Date().toLocaleDateString('en-US', {
+  const studyDate = new Date().toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', {
     month: 'long', day: 'numeric', year: 'numeric',
   })
 
@@ -31,35 +43,39 @@ export default function ResultsPage() {
     return (
       <Layout>
         <div className="flex min-h-[50vh] items-center justify-center text-[11px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.35)]">
-          Reading observations…
+          {T.loading}
         </div>
       </Layout>
     )
   }
 
+  const countLabel = ranked.length === 1 ? T.photo_1 : T.photos_n
+
   return (
     <Layout>
       <div className="mx-auto max-w-4xl px-6 py-14">
 
-        {/* Document header */}
         <div className="border-b border-[rgba(15,15,15,0.12)] pb-10">
+          <FPMonogram className="mb-5 h-6 w-6 text-[rgba(15,15,15,0.38)]" />
           <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
-            Visual Study
+            {T.label}
           </p>
           <div className="mt-4 flex items-end justify-between gap-6">
             <h1 className="font-display text-4xl font-light leading-tight text-[#0f0f0f]">
-              Observation Record
+              {T.h1}
             </h1>
             <Link to="/upload" className="btn-ghost shrink-0 self-start">
-              New study
+              {T.new_study}
             </Link>
           </div>
           <p className="mt-4 text-[11px] text-[rgba(15,15,15,0.42)]">
-            {ranked.length} {ranked.length === 1 ? 'photograph' : 'photographs'} · {studyDate} · Canvas API
+            {ranked.length} {countLabel} · {studyDate} · Canvas API
           </p>
         </div>
 
-        <ResultsDashboard ranked={ranked} />
+        <ResultsDashboard ranked={ranked} portfolio={portfolio} />
+
+        <PublishSection ranked={ranked} />
 
       </div>
     </Layout>

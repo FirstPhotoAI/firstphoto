@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Paper background — always visible in browser tab -->
+  <rect width="32" height="32" fill="#fafaf8"/>
+
+  <!-- Photograph frame -->
+  <rect x="1.5" y="1.5" width="29" height="29"
+    stroke="#0f0f0f" stroke-width="1.5" fill="none"/>
+
+  <!-- Focal point — the eye, the impression, the aperture -->
+  <circle cx="16" cy="15" r="3" fill="#0f0f0f"/>
+</svg>

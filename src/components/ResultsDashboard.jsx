@@ -1,20 +1,10 @@
 import { useState } from 'react'
+import { useLang } from '../contexts/LangContext'
+import { translations } from '../i18n'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Vote helpers (localStorage) ──────────────────────────────────────────────
 
-const DIM_LABELS = {
-  brightness:  'Exposure',
-  contrast:    'Contrast',
-  saturation:  'Color Balance',
-  composition: 'Composition',
-  sharpness:   'Sharpness',
-}
-
-const DIMS = ['brightness', 'contrast', 'saturation', 'composition', 'sharpness']
-
-const REACTIONS = ['approachable', 'neutral', 'distant']
-
-// ─── Vote helpers (localStorage) — unchanged ──────────────────────────────────
+const REACTION_KEYS = ['approachable', 'neutral', 'distant']
 
 function getVotes(photoId) {
   try {
@@ -27,16 +17,14 @@ function getVotes(photoId) {
 
 function saveVote(photoId, reaction) {
   try {
-    const all = JSON.parse(localStorage.getItem('firstphoto_votes') || '{}')
+    const all     = JSON.parse(localStorage.getItem('firstphoto_votes') || '{}')
     const current = all[photoId] || { approachable: 0, neutral: 0, distant: 0, myVote: null }
 
     if (current.myVote === reaction) {
       current[reaction] = Math.max(0, current[reaction] - 1)
       current.myVote = null
     } else {
-      if (current.myVote) {
-        current[current.myVote] = Math.max(0, current[current.myVote] - 1)
-      }
+      if (current.myVote) current[current.myVote] = Math.max(0, current[current.myVote] - 1)
       current[reaction] += 1
       current.myVote = reaction
     }
@@ -49,46 +37,11 @@ function saveVote(photoId, reaction) {
   }
 }
 
-// ─── strongestWeakest — unchanged ─────────────────────────────────────────────
-
-function strongestWeakest(scores) {
-  const sorted = [...DIMS].sort((a, b) => scores[b].score - scores[a].score)
-  return { strongest: sorted[0], weakest: sorted[sorted.length - 1] }
-}
-
-// ─── useThisWhen — derive actionable placement guidance from analysis ──────────
-
-function useThisWhen(scores) {
-  const total = scores.total
-
-  if (total >= 78) {
-    return 'Use as your lead image on any platform. This photograph holds across thumbnail sizes and full-scale displays without adjustments.'
-  }
-
-  const { strongest } = strongestWeakest(scores)
-
-  const guidance = {
-    composition: 'Use for professional and intentional contexts — profiles, speaker bios, portfolio headers. Intentional framing signals purpose.',
-    brightness:  'Use wherever consistent visibility matters. Balanced exposure reproduces reliably across different screens and ambient light conditions.',
-    contrast:    'Use in thumbnail-heavy contexts — directories, apps, social headers. Strong tonal definition holds at small display sizes.',
-    saturation:  'Use for social and approachability-forward contexts — community pages, event listings, any setting where warmth reads first.',
-    sharpness:   'Use wherever images are displayed at large scale — cover photos, banners, any context where the image will be enlarged.',
-  }
-
-  return guidance[strongest] ?? 'Place second or third in a photo sequence. Best used to reinforce the impression set by a stronger lead.'
-}
-
 // ─── VotingPanel ──────────────────────────────────────────────────────────────
 
-function VotingPanel({ photoId, label = 'Community Impression' }) {
+function VotingPanel({ photoId, label, reactions }) {
   const [votes, setVotes] = useState(() => getVotes(photoId))
-
-  function handleVote(reaction) {
-    const updated = saveVote(photoId, reaction)
-    setVotes(updated)
-  }
-
-  const total = REACTIONS.reduce((sum, r) => sum + votes[r], 0)
+  const total = REACTION_KEYS.reduce((s, r) => s + votes[r], 0)
 
   return (
     <div>
@@ -96,18 +49,18 @@ function VotingPanel({ photoId, label = 'Community Impression' }) {
         {label}
       </p>
       <div className="flex gap-2">
-        {REACTIONS.map((r) => (
+        {REACTION_KEYS.map((r) => (
           <button
             key={r}
             type="button"
-            onClick={() => handleVote(r)}
+            onClick={() => setVotes(saveVote(photoId, r))}
             className={`flex-1 border py-2 text-[11px] capitalize tracking-wide transition-colors duration-100 ${
               votes.myVote === r
                 ? 'border-[#0f0f0f] bg-[rgba(15,15,15,0.04)] text-[#0f0f0f]'
                 : 'border-[rgba(15,15,15,0.14)] text-[rgba(15,15,15,0.48)] hover:border-[rgba(15,15,15,0.35)] hover:text-[#0f0f0f]'
             }`}
           >
-            {r}
+            {reactions[r]}
             {votes[r] > 0 && (
               <span className="ml-1 text-[rgba(15,15,15,0.35)]">{votes[r]}</span>
             )}
@@ -116,23 +69,24 @@ function VotingPanel({ photoId, label = 'Community Impression' }) {
       </div>
       {total > 0 && (
         <p className="mt-2 text-[11px] text-[rgba(15,15,15,0.30)]">
-          {total} {total === 1 ? 'impression' : 'impressions'} on record
+          {total === 1 ? `1 ${label.toLowerCase()}` : `${total} ${label.toLowerCase()}`}
         </p>
       )}
     </div>
   )
 }
 
-// ─── DimTable — shared collapsed technical notes table ────────────────────────
+// ─── DimTable ─────────────────────────────────────────────────────────────────
 
-function DimTable({ scores }) {
+function DimTable({ scores, dimLabels }) {
+  const DIMS = ['brightness', 'contrast', 'saturation', 'composition', 'sharpness']
   return (
     <div className="space-y-3.5">
       {DIMS.map((dim) => (
         <div key={dim}>
           <div className="flex items-center gap-3">
             <span className="w-24 shrink-0 text-[10px] text-[rgba(15,15,15,0.40)]">
-              {DIM_LABELS[dim]}
+              {dimLabels[dim]}
             </span>
             <div className="relative h-[1px] flex-1 bg-[rgba(15,15,15,0.07)]">
               <div
@@ -140,7 +94,6 @@ function DimTable({ scores }) {
                 style={{ width: `${scores[dim].score}%` }}
               />
             </div>
-            {/* Score as dim metadata — no visual emphasis */}
             <span className="w-6 shrink-0 text-right text-[10px] tabular-nums text-[rgba(15,15,15,0.26)]">
               {scores[dim].score}
             </span>
@@ -154,151 +107,299 @@ function DimTable({ scores }) {
   )
 }
 
-// ─── LeadEntry — magazine critique for the top-ranked photograph ──────────────
+// ─── SummaryView — always visible ─────────────────────────────────────────────
 
-function LeadEntry({ photo }) {
-  const [showNotes, setShowNotes] = useState(false)
-  const { scores, overall } = photo.analysis
-  const when = useThisWhen(scores)
+function SummaryView({ ranked, portfolio, T }) {
+  const top      = ranked[0]
+  const identity = portfolio?.visual_identity ?? top.analysis.editorial.archetype
+  const insights = portfolio?.what_makes_the_winner_stronger
+    ?? top.analysis.editorial.creativeHighlights
 
   return (
     <section className="py-12">
 
-      {/* Section label */}
-      <p className="mb-8 text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.36)]">
-        Recommended First Photograph
+      {/* Visual Identity */}
+      <p className="font-display text-3xl font-light text-[#0f0f0f]">
+        {T.portfolio_identity}
+      </p>
+      <p className="mt-2 text-[15px] text-[rgba(15,15,15,0.50)]">
+        {identity}
       </p>
 
-      {/* Figure + editorial critique — two columns */}
-      <div className="flex gap-10 sm:gap-14">
+      <div className="my-8 border-t border-[rgba(15,15,15,0.10)]" />
 
-        {/* Figure — larger than supporting entries */}
+      {/* Featured Photo + Key Insights */}
+      <div className="flex gap-8 sm:gap-12">
+
+        {/* Thumbnail */}
         <div className="shrink-0">
-          <div className="w-36 border border-[rgba(15,15,15,0.12)] sm:w-44">
+          <div className="w-28 border border-[rgba(15,15,15,0.12)] sm:w-36">
             <img
-              src={photo.preview}
-              alt="Recommended first photograph"
+              src={top.preview}
+              alt={T.featured_photo}
               className="aspect-[3/4] w-full object-cover"
             />
           </div>
-          {/* Score: small metadata, not a headline */}
-          <p className="mt-2 text-center text-[10px] tabular-nums text-[rgba(15,15,15,0.22)]">
-            {scores.total} / 100
+        </div>
+
+        {/* Key Insights */}
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.36)]">
+            {T.key_insights}
           </p>
+          <ul className="mt-4 space-y-3">
+            {insights.slice(0, 3).map((item, i) => (
+              <li key={i} className="flex gap-3 text-[13px] leading-relaxed text-[rgba(15,15,15,0.68)]">
+                <span className="shrink-0 text-[rgba(15,15,15,0.28)]">•</span>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* Critique prose */}
-        <div className="min-w-0 flex-1 space-y-7">
-
-          {/* Primary Observation */}
-          <div>
-            <p className="mb-2.5 text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.34)]">
-              Primary Observation
-            </p>
-            <p className="text-[15px] leading-[1.9] text-[rgba(15,15,15,0.80)]">
-              {overall}
-            </p>
-          </div>
-
-          {/* Use This When */}
-          <div>
-            <p className="mb-2.5 text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.34)]">
-              Use This When
-            </p>
-            <p className="text-sm leading-relaxed text-[rgba(15,15,15,0.60)]">
-              {when}
-            </p>
-          </div>
-
-        </div>
-      </div>
-
-      {/* First Impression — full width below figure */}
-      <div className="mt-9 border-t border-[rgba(15,15,15,0.08)] pt-8">
-        <VotingPanel photoId={photo.id} label="First Impression" />
-      </div>
-
-      {/* Study Notes — collapsed by default */}
-      <div className="mt-7">
-        <button
-          type="button"
-          onClick={() => setShowNotes((v) => !v)}
-          className="text-[11px] text-[rgba(15,15,15,0.33)] transition-colors hover:text-[#0f0f0f]"
-        >
-          {showNotes ? 'Hide technical notes ↑' : 'Read technical notes ↓'}
-        </button>
-
-        {showNotes && (
-          <div className="mt-5 border-l border-[rgba(15,15,15,0.09)] pl-5">
-            <p className="mb-5 text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.28)]">
-              Study Notes
-            </p>
-            <DimTable scores={scores} />
-          </div>
-        )}
       </div>
 
     </section>
   )
 }
 
-// ─── SupportEntry — compact ranked row for photographs 2 and below ────────────
+// ─── FullAnalysis — hidden behind toggle ──────────────────────────────────────
 
-function SupportEntry({ photo, isFirst }) {
+function FullAnalysis({ ranked, portfolio, T }) {
+  const [showGrowth, setShowGrowth] = useState(false)
+  const [showNotes,  setShowNotes]  = useState(false)
+  const top = ranked[0]
+  const { scores, editorial } = top.analysis
+  const rest = ranked.slice(1)
+
+  return (
+    <div>
+
+      {/* Portfolio detail: what stands out + try next */}
+      {portfolio && (
+        <div className="border-b border-[rgba(15,15,15,0.10)] pb-10">
+
+          <div className="grid gap-10 sm:grid-cols-2">
+            <div>
+              <p className="mb-4 text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.36)]">
+                {T.portfolio_stands_out}
+              </p>
+              <ul className="space-y-2.5">
+                {portfolio.what_makes_the_winner_stronger.map((obs, i) => (
+                  <li key={i} className="flex gap-3 text-[13px] text-[rgba(15,15,15,0.68)]">
+                    <span className="shrink-0 text-[rgba(15,15,15,0.28)]">•</span>
+                    {obs}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="mb-4 text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.36)]">
+                {T.portfolio_try_next}
+              </p>
+              <ul className="space-y-2.5">
+                {portfolio.future_exploration.map((s, i) => (
+                  <li key={i} className="flex gap-3 text-[13px] text-[rgba(15,15,15,0.68)]">
+                    <span className="shrink-0 text-[rgba(15,15,15,0.28)]">•</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* Featured photo deep analysis */}
+      <div className="py-10">
+
+        <div className="flex gap-10 sm:gap-14">
+          <div className="shrink-0">
+            <div className="w-24 border border-[rgba(15,15,15,0.12)] sm:w-32">
+              <img
+                src={top.preview}
+                alt={T.lead_label}
+                className="aspect-[3/4] w-full object-cover"
+              />
+            </div>
+            <p className="mt-2 text-center text-[9px] tabular-nums text-[rgba(15,15,15,0.22)]">
+              {scores.total} / 100
+            </p>
+          </div>
+
+          <div className="min-w-0 flex-1 space-y-6">
+            <div>
+              <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.34)]">
+                {T.first_impression}
+              </p>
+              <p className="text-[14px] leading-[1.9] text-[rgba(15,15,15,0.80)]">
+                {editorial.firstImpression}
+              </p>
+            </div>
+            <div>
+              <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.34)]">
+                {T.visual_study}
+              </p>
+              <p className="text-[13px] leading-[1.95] text-[rgba(15,15,15,0.62)]">
+                {editorial.curatorReview}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Creative highlights */}
+        <div className="mt-8 border-t border-[rgba(15,15,15,0.08)] pt-7">
+          <p className="mb-4 text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.34)]">
+            {T.creative_highlights}
+          </p>
+          <ul className="space-y-3">
+            {editorial.creativeHighlights.map((h, i) => (
+              <li key={i} className="flex gap-3 text-[13px] leading-relaxed text-[rgba(15,15,15,0.66)]">
+                <span className="mt-0.5 shrink-0 text-[10px] text-[rgba(15,15,15,0.28)]">—</span>
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Voting */}
+        <div className="mt-8 border-t border-[rgba(15,15,15,0.08)] pt-7">
+          <VotingPanel photoId={top.id} label={T.community} reactions={T.reactions} />
+        </div>
+
+        {/* Keywords */}
+        <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1">
+          {editorial.keywords.map((k) => (
+            <span
+              key={k}
+              className="text-[10px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.28)]"
+            >
+              {k}
+            </span>
+          ))}
+        </div>
+
+        {/* Growth suggestions */}
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={() => setShowGrowth((v) => !v)}
+            className="text-[11px] text-[rgba(15,15,15,0.33)] transition-colors hover:text-[#0f0f0f]"
+          >
+            {showGrowth ? T.growth_hide : T.growth_show}
+          </button>
+          {showGrowth && (
+            <div className="mt-5 border-l border-[rgba(15,15,15,0.09)] pl-5">
+              <p className="mb-4 text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.28)]">
+                {T.growth_label}
+              </p>
+              <ul className="space-y-3.5">
+                {editorial.growthSuggestions.map((s, i) => (
+                  <li key={i} className="flex gap-3 text-[12px] leading-relaxed text-[rgba(15,15,15,0.56)]">
+                    <span className="mt-0.5 shrink-0 text-[10px] text-[rgba(15,15,15,0.24)]">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Technical notes */}
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setShowNotes((v) => !v)}
+            className="text-[11px] text-[rgba(15,15,15,0.26)] transition-colors hover:text-[rgba(15,15,15,0.60)]"
+          >
+            {showNotes ? T.notes_hide : T.notes_show}
+          </button>
+          {showNotes && (
+            <div className="mt-5 border-l border-[rgba(15,15,15,0.09)] pl-5">
+              <p className="mb-5 text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.28)]">
+                {T.notes_label}
+              </p>
+              <DimTable scores={scores} dimLabels={T.dim_labels} />
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Other ranked photos */}
+      {rest.length > 0 && (
+        <div className="border-t border-[rgba(15,15,15,0.12)] pt-8">
+          <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.36)]">
+            {T.ranked_label}
+          </p>
+          <p className="mb-7 text-[11px] text-[rgba(15,15,15,0.36)]">
+            {rest.length === 1
+              ? T.ranked_1.replace('{n}', rest.length)
+              : T.ranked_n.replace('{n}', rest.length)}
+          </p>
+          {rest.map((photo, i) => (
+            <SupportEntry key={photo.id} photo={photo} isFirst={i === 0} T={T} />
+          ))}
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+// ─── SupportEntry ─────────────────────────────────────────────────────────────
+
+function SupportEntry({ photo, isFirst, T }) {
   const [showNotes, setShowNotes] = useState(false)
-  const { scores, overall } = photo.analysis
-  const { strongest, weakest } = strongestWeakest(scores)
+  const { scores, editorial } = photo.analysis
   const entryNum = String(photo.rank).padStart(2, '0')
+  const DIMS = ['brightness', 'contrast', 'saturation', 'composition', 'sharpness']
 
   return (
     <div className={`py-7 ${isFirst ? '' : 'border-t border-[rgba(15,15,15,0.07)]'}`}>
       <div className="flex gap-5 sm:gap-7">
 
-        {/* Rank numeral */}
         <span className="w-5 shrink-0 pt-px text-[11px] tabular-nums text-[rgba(15,15,15,0.24)]">
           {entryNum}
         </span>
 
-        {/* Thumbnail */}
         <div className="w-14 shrink-0 border border-[rgba(15,15,15,0.10)] sm:w-16">
           <img
             src={photo.preview}
-            alt={`Entry ${entryNum}`}
+            alt={entryNum}
             className="aspect-[3/4] w-full object-cover"
           />
         </div>
 
-        {/* Content */}
         <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2.5">
+            <span className="text-[10px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.46)]">
+              {editorial.archetype}
+            </span>
+            <span className="truncate text-[10px] text-[rgba(15,15,15,0.22)]" title={photo.name}>
+              {photo.name}
+            </span>
+          </div>
 
-          <p
-            className="truncate text-[10px] text-[rgba(15,15,15,0.28)]"
-            title={photo.name}
-          >
-            {photo.name}
-          </p>
-
-          {/* Observation — leads, not the score */}
           <p className="mt-1.5 text-[13px] leading-relaxed text-[rgba(15,15,15,0.66)]">
-            {overall}
+            {editorial.firstImpression}
           </p>
 
-          {/* Score + strongest/weakest as small metadata */}
-          <p className="mt-2.5 text-[10px] text-[rgba(15,15,15,0.28)]">
-            {DIM_LABELS[strongest]} strongest
-            <span className="mx-2 opacity-40">·</span>
-            {DIM_LABELS[weakest]} weakest
+          <p className="mt-2 text-[10px] text-[rgba(15,15,15,0.26)]">
+            {editorial.keywords.slice(0, 3).join(' · ')}
             <span className="mx-2 opacity-40">·</span>
             <span className="tabular-nums">{scores.total} / 100</span>
           </p>
 
-          {/* Technical notes — collapsed */}
           <button
             type="button"
             onClick={() => setShowNotes((v) => !v)}
-            className="mt-2.5 text-[11px] text-[rgba(15,15,15,0.30)] transition-colors hover:text-[rgba(15,15,15,0.70)]"
+            className="mt-2.5 text-[11px] text-[rgba(15,15,15,0.28)] transition-colors hover:text-[rgba(15,15,15,0.70)]"
           >
-            {showNotes ? 'Hide technical notes ↑' : 'Read technical notes ↓'}
+            {showNotes ? T.notes_hide : T.notes_show}
           </button>
 
           {showNotes && (
@@ -307,9 +408,9 @@ function SupportEntry({ photo, isFirst }) {
                 {DIMS.map((dim) => (
                   <div key={dim} className="flex items-center gap-3">
                     <span className="w-20 shrink-0 text-[10px] text-[rgba(15,15,15,0.36)]">
-                      {DIM_LABELS[dim]}
+                      {T.dim_labels[dim]}
                     </span>
-                    <div className="relative h-[1px] flex-1 bg-[rgba(15,15,15,0.06)]">
+                    <div className="relative h-[1px] flex-1 bg-[rgba(15,15,16,0.06)]">
                       <div
                         className="absolute inset-y-0 left-0 h-[1px] bg-[rgba(15,15,15,0.34)]"
                         style={{ width: `${scores[dim].score}%` }}
@@ -323,7 +424,6 @@ function SupportEntry({ photo, isFirst }) {
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>
@@ -332,37 +432,36 @@ function SupportEntry({ photo, isFirst }) {
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export default function ResultsDashboard({ ranked }) {
-  if (!ranked || ranked.length === 0) return null
+export default function ResultsDashboard({ ranked, portfolio }) {
+  const { lang } = useLang()
+  const T = translations[lang].dashboard
+  const [showFull, setShowFull] = useState(false)
 
-  const [top, ...rest] = ranked
+  if (!ranked || ranked.length === 0) return null
 
   return (
     <div>
 
-      {/* Rank 1 — magazine critique */}
-      <LeadEntry photo={top} />
+      {/* ── Always visible: identity + photo + 3 insights ── */}
+      <SummaryView ranked={ranked} portfolio={portfolio} T={T} />
 
-      {/* Ranks 2+ — compact ranked order */}
-      {rest.length > 0 && (
-        <div className="border-t border-[rgba(15,15,15,0.12)] pt-10">
-          <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.36)]">
-            Ranked Order
-          </p>
-          <p className="mb-8 text-[11px] text-[rgba(15,15,15,0.36)]">
-            {rest.length} {rest.length === 1 ? 'additional photograph' : 'additional photographs'} in descending order.
-          </p>
+      {/* ── Expandable full analysis ── */}
+      <div className="border-t border-[rgba(15,15,15,0.12)]">
+        <button
+          type="button"
+          onClick={() => setShowFull((v) => !v)}
+          className="py-5 text-[11px] text-[rgba(15,15,15,0.40)] transition-colors hover:text-[#0f0f0f]"
+        >
+          {showFull ? T.ocultar_completo : T.ver_completo}
+        </button>
 
-          {rest.map((photo, i) => (
-            <SupportEntry key={photo.id} photo={photo} isFirst={i === 0} />
-          ))}
-        </div>
-      )}
+        {showFull && (
+          <FullAnalysis ranked={ranked} portfolio={portfolio} T={T} />
+        )}
+      </div>
 
-      <div className="mt-10 border-t border-[rgba(15,15,15,0.08)] pt-5">
-        <p className="text-[11px] text-[rgba(15,15,15,0.22)]">
-          Canvas API · Local analysis · No data transmitted
-        </p>
+      <div className="border-t border-[rgba(15,15,15,0.08)] pt-5 pb-2">
+        <p className="text-[11px] text-[rgba(15,15,15,0.22)]">{T.footer}</p>
       </div>
 
     </div>
