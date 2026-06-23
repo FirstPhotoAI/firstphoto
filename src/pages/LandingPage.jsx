@@ -1,6 +1,27 @@
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 
+const PLANS = [
+  { feature: 'Mejor foto principal',    free: true,  pro: true,  creator: true  },
+  { feature: 'Orden recomendado',       free: true,  pro: true,  creator: true  },
+  { feature: 'Primera impresión',       free: true,  pro: true,  creator: true  },
+  { feature: 'Análisis detallado',      free: false, pro: true,  creator: true  },
+  { feature: 'Fortalezas visuales',     free: false, pro: true,  creator: true  },
+  { feature: 'Estrategia visual',       free: false, pro: true,  creator: true  },
+  { feature: 'Optimización de perfil',  free: false, pro: true,  creator: true  },
+  { feature: 'Bio optimizada con IA',   free: false, pro: false, creator: true  },
+  { feature: 'Ideas para Instagram',    free: false, pro: false, creator: true  },
+  { feature: 'Ideas para Threads',      free: false, pro: false, creator: true  },
+  { feature: 'Marca personal',          free: false, pro: false, creator: true  },
+  { feature: 'Calendario de contenido', free: false, pro: false, creator: true  },
+]
+
+function Cell({ yes }) {
+  return yes
+    ? <span className="text-[rgba(15,15,15,0.62)]">✓</span>
+    : <span className="text-[rgba(15,15,15,0.18)]">–</span>
+}
+
 const METHOD = [
   {
     index: '01',
@@ -79,6 +100,87 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ── Rule ────────────────────────────────────────────────────────── */}
+      <div className="border-t border-[rgba(15,15,15,0.12)]" />
+
+      {/* ── Roadmap table ───────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-5xl px-6 py-20">
+
+        <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
+          Versiones
+        </p>
+        <h2 className="mt-5 font-display text-3xl font-light text-[#0f0f0f] sm:text-4xl">
+          Planes de FirstPhoto
+        </h2>
+        <p className="mt-4 max-w-lg text-sm leading-relaxed text-[rgba(15,15,15,0.52)]">
+          La versión gratuita te ayuda a elegir tu mejor primera foto. Las versiones Pro y Creator
+          estarán enfocadas en estrategia visual, perfil y contenido.
+        </p>
+
+        {/* Table — overflow-x-auto for narrow viewports */}
+        <div className="mt-10 overflow-x-auto">
+          <table className="w-full min-w-[520px] border-collapse">
+            <thead>
+              <tr className="border-b border-[rgba(15,15,15,0.14)]">
+                <th className="pb-4 pr-6 text-left text-[10px] font-normal uppercase tracking-[0.16em] text-[rgba(15,15,15,0.38)]">
+                  Función
+                </th>
+                {/* Gratis */}
+                <th className="w-24 pb-4 text-center text-[11px] font-normal text-[rgba(15,15,15,0.55)] sm:w-28">
+                  Gratis
+                  <span className="mt-0.5 block text-[9px] text-[rgba(15,15,15,0.28)]">
+                    Disponible
+                  </span>
+                </th>
+                {/* Pro */}
+                <th className="w-24 pb-4 text-center text-[11px] font-normal text-[rgba(15,15,15,0.70)] sm:w-28">
+                  Pro ⭐
+                  <span className="mt-0.5 block text-[9px] text-[rgba(15,15,15,0.30)]">
+                    Próximamente
+                  </span>
+                </th>
+                {/* Creator */}
+                <th className="w-24 pb-4 text-center text-[11px] font-normal text-[rgba(15,15,15,0.80)] sm:w-28">
+                  Creator 🚀
+                  <span className="mt-0.5 block text-[9px] text-[rgba(15,15,15,0.30)]">
+                    Próximamente
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {PLANS.map((row, i) => (
+                <tr
+                  key={row.feature}
+                  className={`border-b border-[rgba(15,15,15,0.06)] ${
+                    i === 2 ? 'border-b-[rgba(15,15,15,0.14)]' : ''
+                  }`}
+                >
+                  <td className="py-3 pr-6 text-[13px] text-[rgba(15,15,15,0.62)]">
+                    {row.feature}
+                  </td>
+                  <td className="py-3 text-center text-[13px]"><Cell yes={row.free} /></td>
+                  <td className="py-3 text-center text-[13px]"><Cell yes={row.pro} /></td>
+                  <td className="py-3 text-center text-[13px]"><Cell yes={row.creator} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Creator aside */}
+        <div className="mt-10 border-l border-[rgba(15,15,15,0.12)] pl-5">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.38)]">
+            Creator 🚀 — Próximamente
+          </p>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-[rgba(15,15,15,0.52)]">
+            No solo elegimos tu mejor foto. Te ayudamos a construir una presencia visual completa
+            para Instagram, Threads, casting, negocios y marca personal.
+          </p>
+        </div>
+
       </section>
 
       {/* ── Rule ────────────────────────────────────────────────────────── */}
