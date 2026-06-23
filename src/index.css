@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #fafaf8;
+    color: #0f0f0f;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  /*
+   * Primary button: ink fill, paper text.
+   * Inverts on hover — border remains, background clears.
+   */
+  .btn-primary {
+    @apply inline-flex items-center justify-center border border-[#0f0f0f] bg-[#0f0f0f] px-6 py-3 text-xs tracking-[0.12em] uppercase text-[#fafaf8] transition-colors duration-150 hover:bg-transparent hover:text-[#0f0f0f] disabled:cursor-not-allowed disabled:opacity-30;
+  }
+
+  /*
+   * Ghost button: subtle border, ink text.
+   */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center border border-[rgba(15,15,15,0.22)] px-6 py-3 text-xs tracking-[0.12em] uppercase text-[#0f0f0f] transition-colors duration-150 hover:border-[#0f0f0f] disabled:cursor-not-allowed disabled:opacity-30;
+  }
+
+  /*
+   * Card: no radius, hairline border, paper background.
+   */
+  .card {
+    @apply border border-[rgba(15,15,15,0.12)] bg-[#fafaf8] p-6;
+  }
+}
