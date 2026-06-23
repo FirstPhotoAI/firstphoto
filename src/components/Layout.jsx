@@ -21,7 +21,7 @@ export default function Layout({ children }) {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
 
           {/* Logo */}
-          <Link to="/" className="text-[#0f0f0f]">
+          <Link to="/" style={{ textDecoration: 'none' }}>
             <FirstPhotoLogo size="small" showText />
           </Link>
 

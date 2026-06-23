@@ -7,31 +7,37 @@
  * Props
  *   size       'icon' | 'small' | 'medium' | 'large'  — default 'small'
  *   showText   boolean — render "FIRSTPHOTO" wordmark beside / below the mark
- *   className  extra classes on the root element
+ *   className  extra Tailwind classes on the root element (use for color overrides)
+ *
+ * Sizing uses explicit SVG width/height attributes so the mark is never collapsed
+ * by Tailwind purging or missing CSS. Color defaults to #0f0f0f via inline style
+ * but is overridable via className (e.g. "text-[rgba(15,15,15,0.28)]").
  */
 
-const MARK_SIZES = {
-  icon:   'h-[18px] w-[18px]',
-  small:  'h-6 w-6',
-  medium: 'h-8 w-8',
-  large:  'h-12 w-12',
+const PIXEL_SIZES = {
+  icon:   18,
+  small:  24,
+  medium: 32,
+  large:  48,
 }
 
-const TEXT_SIZES = {
-  icon:   'text-[9px]  tracking-[0.20em]',
-  small:  'text-[10px] tracking-[0.22em]',
-  medium: 'text-[11px] tracking-[0.22em]',
-  large:  'text-sm     tracking-[0.22em]',
+const TEXT_STYLES = {
+  icon:   { fontSize: '9px',  letterSpacing: '0.20em' },
+  small:  { fontSize: '10px', letterSpacing: '0.22em' },
+  medium: { fontSize: '11px', letterSpacing: '0.22em' },
+  large:  { fontSize: '13px', letterSpacing: '0.22em' },
 }
 
-function Mark({ sizeClass, className = '' }) {
+function Mark({ px }) {
   return (
     <svg
+      width={px}
+      height={px}
       viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={`${sizeClass} ${className}`}
       aria-hidden="true"
+      style={{ display: 'block', flexShrink: 0 }}
     >
       {/* Photograph frame */}
       <rect
@@ -50,32 +56,47 @@ export default function FirstPhotoLogo({
   size      = 'small',
   showText  = false,
   className = '',
+  color     = '#0f0f0f',
 }) {
-  const markClass = MARK_SIZES[size] ?? MARK_SIZES.small
-  const textClass = TEXT_SIZES[size] ?? TEXT_SIZES.small
+  const px        = PIXEL_SIZES[size]  ?? PIXEL_SIZES.small
+  const textStyle = TEXT_STYLES[size]  ?? TEXT_STYLES.small
   const isLarge   = size === 'large'
 
+  /* ── Mark only ─────────────────────────────────────── */
   if (!showText) {
-    return <Mark sizeClass={markClass} className={className} />
+    return (
+      <span
+        className={className}
+        style={{ display: 'inline-flex', color }}
+      >
+        <Mark px={px} />
+      </span>
+    )
   }
 
+  /* ── Large: mark stacked above wordmark ─────────────── */
   if (isLarge) {
-    /* Large: mark stacked above wordmark */
     return (
-      <div className={`flex flex-col items-start gap-3 ${className}`}>
-        <Mark sizeClass={markClass} />
-        <p className={`font-medium uppercase ${textClass} text-[#0f0f0f]`}>
+      <div
+        className={className}
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px', color }}
+      >
+        <Mark px={px} />
+        <p style={{ fontWeight: 500, textTransform: 'uppercase', ...textStyle, margin: 0 }}>
           FirstPhoto
         </p>
       </div>
     )
   }
 
-  /* Default: mark + wordmark side by side */
+  /* ── Default: mark + wordmark side by side ──────────── */
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
-      <Mark sizeClass={markClass} />
-      <p className={`font-medium uppercase ${textClass} text-[#0f0f0f]`}>
+    <div
+      className={className}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', color }}
+    >
+      <Mark px={px} />
+      <p style={{ fontWeight: 500, textTransform: 'uppercase', ...textStyle, margin: 0 }}>
         FirstPhoto
       </p>
     </div>

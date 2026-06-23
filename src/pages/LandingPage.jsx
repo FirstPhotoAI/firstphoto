@@ -4,7 +4,7 @@ import Layout from '../components/Layout'
 import FirstPhotoLogo from '../components/FirstPhotoLogo'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
-import { getCuratorPicks, getNewest } from '../data/archiveStore'
+import { getCuratorPicks } from '../data/archiveStore'
 
 // ─── Plan table helpers ────────────────────────────────────────────────────────
 
@@ -29,52 +29,17 @@ function Cell({ yes }) {
     : <span className="text-[rgba(15,15,15,0.18)]">–</span>
 }
 
-// ─── Gallery preview card ──────────────────────────────────────────────────────
-
-function PreviewCard({ entry }) {
-  return (
-    <Link
-      to={`/archive/${entry.id}`}
-      className="group block overflow-hidden border border-[rgba(15,15,15,0.10)] transition-colors hover:border-[rgba(15,15,15,0.26)]"
-    >
-      <div className="aspect-[3/4] overflow-hidden bg-[rgba(15,15,15,0.04)]">
-        <img
-          src={entry.photo}
-          alt={entry.title || entry.archetype}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-        />
-      </div>
-      {(entry.archetype || entry.caption) && (
-        <div className="p-3">
-          {entry.archetype && (
-            <p className="text-[9px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.40)]">
-              {entry.archetype}
-            </p>
-          )}
-          {entry.caption && (
-            <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-[rgba(15,15,15,0.52)]">
-              {entry.caption}
-            </p>
-          )}
-        </div>
-      )}
-    </Link>
-  )
-}
-
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
   const { lang } = useLang()
   const T = translations[lang].landing
 
-  const [featuredEntry,   setFeaturedEntry]   = useState(null)
-  const [previewEntries,  setPreviewEntries]  = useState([])
+  const [featuredEntry, setFeaturedEntry] = useState(null)
 
   useEffect(() => {
     const picks = getCuratorPicks(1)
     setFeaturedEntry(picks[0] ?? null)
-    setPreviewEntries(getNewest(6))
   }, [])
 
   return (
@@ -83,7 +48,7 @@ export default function LandingPage() {
       {/* ── 1. Hero ───────────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 pb-20 pt-24 md:pt-32">
 
-        <FirstPhotoLogo size="large" showText className="text-[#0f0f0f]" />
+        <FirstPhotoLogo size="large" showText />
 
         <p className="mt-4 text-[9px] italic text-[rgba(15,15,15,0.42)]">
           {T.tagline}
@@ -163,40 +128,20 @@ export default function LandingPage() {
         </>
       )}
 
-      {/* ── 3. Community Gallery Preview ──────────────────────────────────────── */}
-      {previewEntries.length > 0 && (
-        <>
-          <section className="mx-auto max-w-5xl px-6 py-16">
-            <div className="mb-3 flex items-end justify-between">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
-                {T.preview_label}
-              </p>
-              <Link
-                to="/archive"
-                className="text-[10px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.40)] hover:text-[#0f0f0f]"
-              >
-                {T.preview_cta} →
-              </Link>
-            </div>
+      {/* ── 3. Community Gallery invitation ──────────────────────────────────── */}
+      <section className="mx-auto max-w-5xl px-6 py-20">
+        <p className="mb-6 text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
+          {T.preview_label}
+        </p>
+        <p className="max-w-xl font-display text-2xl font-light leading-snug text-[#0f0f0f] sm:text-3xl">
+          {T.preview_subcopy}
+        </p>
+        <div className="mt-10">
+          <Link to="/archive" className="btn-primary">{T.preview_cta}</Link>
+        </div>
+      </section>
 
-            <p className="mb-10 max-w-lg text-sm leading-relaxed text-[rgba(15,15,15,0.50)]">
-              {T.preview_subcopy}
-            </p>
-
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-              {previewEntries.map((entry) => (
-                <PreviewCard key={entry.id} entry={entry} />
-              ))}
-            </div>
-
-            <div className="mt-10 flex justify-center">
-              <Link to="/archive" className="btn-primary">{T.preview_cta}</Link>
-            </div>
-          </section>
-
-          <div className="border-t border-[rgba(15,15,15,0.12)]" />
-        </>
-      )}
+      <div className="border-t border-[rgba(15,15,15,0.12)]" />
 
       {/* ── 4. Submit section ────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 py-20">
@@ -360,7 +305,7 @@ export default function LandingPage() {
 
       <div className="mx-auto max-w-5xl px-6 py-8">
         <div className="flex items-center justify-between">
-          <FirstPhotoLogo size="icon" className="text-[rgba(15,15,15,0.28)]" />
+          <FirstPhotoLogo size="icon" color="rgba(15,15,15,0.28)" />
           <p className="text-[10px] text-[rgba(15,15,15,0.30)]">{T.footer}</p>
         </div>
       </div>
