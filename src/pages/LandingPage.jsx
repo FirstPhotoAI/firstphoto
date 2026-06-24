@@ -103,61 +103,74 @@ export default function LandingPage() {
   return (
     <Layout>
 
-      {/* ── 1. Hero statement — archive identity, no tool language ────────────── */}
-      <section className="mx-auto max-w-5xl px-6 pt-14 pb-10">
+      {/* ── 1. Hero statement ─────────────────────────────────────────────────── */}
+      {/*
+        Mobile: compact — headline visible, then photograph immediately below.
+        Desktop: generous — full editorial spacing.
+      */}
+      <section className="mx-auto max-w-5xl px-6 pt-7 pb-5 md:pt-14 md:pb-10">
         <p className="text-[9px] uppercase tracking-[0.20em] text-[rgba(15,15,15,0.34)]">
           FirstPhoto — {T.site_label}
         </p>
-        <h1 className="mt-5 max-w-2xl font-display text-3xl font-light leading-snug text-[#0f0f0f] sm:text-4xl md:text-[2.6rem]">
+        <h1 className="mt-3 max-w-2xl font-display text-2xl font-light leading-snug text-[#0f0f0f] sm:text-3xl md:text-[2.6rem]">
           {T.hero_h1}
         </h1>
       </section>
 
-      <div className="border-t border-[rgba(15,15,15,0.10)]" />
+      {/* Divider: hidden on mobile so hero flows directly into photograph */}
+      <div className="hidden border-t border-[rgba(15,15,15,0.10)] md:block" />
 
-      {/* ── 2. Featured story — text left, image right ────────────────────────── */}
-      <section className="mx-auto max-w-5xl px-6 py-10 md:py-12">
+      {/* ── 2. Featured story ─────────────────────────────────────────────────── */}
+      {/*
+        Mobile:  flex-col
+          • Photograph fills the screen first (50vh, full width)
+          • Identity + caption immediately below, no padding gap
+          • CTA at the end
+        Desktop: flex-row, text left / image right, generous spacing
+      */}
+      <section className="mx-auto max-w-5xl px-6 pt-0 pb-8 md:py-12">
 
-        <p className="mb-8 text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
+        {/* Section label — desktop only; on mobile the image speaks first */}
+        <p className="mb-6 hidden text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)] md:block">
           {T.featured_identity}
         </p>
 
-        {/*
-          Mobile:  flex-col — image first, caption below
-          Desktop: flex-row — editorial text left (~40%), image right (~60%)
-        */}
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-10 lg:gap-14">
+        <div className="flex flex-col gap-0 md:flex-row md:items-center md:gap-10 lg:gap-14">
 
-          {/* Mobile: image appears first via order-first; desktop: pushed to right via order-last */}
+          {/* Photograph — order-first on mobile, order-last on desktop */}
           <div
-            className="w-full shrink-0 order-first md:order-last md:w-[55%]"
+            className="order-first w-full shrink-0 md:order-last md:w-[55%]"
             style={{ maxWidth: '760px' }}
           >
-            <div className="overflow-hidden border border-[rgba(15,15,15,0.10)]">
+            <div className="overflow-hidden md:border md:border-[rgba(15,15,15,0.10)]">
               <img
                 src={featuredEntry?.photo ?? HERO_IMAGE}
                 alt={featuredEntry?.archetype ?? 'Featured photograph'}
                 className="block w-full object-cover"
                 style={{
                   aspectRatio: '4 / 3',
-                  maxHeight: '42vh',
+                  maxHeight: '52vh',
                   objectPosition: 'center 30%',
                 }}
               />
             </div>
           </div>
 
-          {/* Editorial text: right on mobile (after image), left on desktop */}
-          <div className="order-last md:order-first md:flex-1 md:py-2">
-            <p className="font-display text-2xl font-light text-[#0f0f0f] md:text-3xl">
+          {/* Editorial caption — directly below image on mobile */}
+          <div className="order-last mt-5 md:order-first md:mt-0 md:flex-1 md:py-2">
+            {/* Mobile only: tiny identity label above archetype name */}
+            <p className="mb-2 text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)] md:hidden">
+              {T.featured_identity}
+            </p>
+            <p className="font-display text-xl font-light text-[#0f0f0f] md:text-3xl">
               {featuredEntry?.archetype ?? '\u00A0'}
             </p>
             {featuredEntry?.caption && (
-              <p className="mt-4 text-sm leading-relaxed text-[rgba(15,15,15,0.55)]">
+              <p className="mt-3 text-sm leading-relaxed text-[rgba(15,15,15,0.55)]">
                 {featuredEntry.caption}
               </p>
             )}
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link to="/archive" className="btn-primary">{T.preview_cta}</Link>
               {featuredEntry && (
                 <Link to={`/archive/${featuredEntry.id}`} className="btn-ghost">
