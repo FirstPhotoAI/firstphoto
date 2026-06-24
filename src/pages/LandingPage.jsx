@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
+import SeriesPhotoStrip from '../components/SeriesPhotoStrip'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
 import {
