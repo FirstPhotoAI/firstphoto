@@ -1,7 +1,6 @@
 ﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import FPMonogram from '../components/FPMonogram'
 import ResultsDashboard from '../components/ResultsDashboard'
 import PublishSection from '../components/PublishSection'
 import { useLang } from '../contexts/LangContext'
@@ -56,7 +55,6 @@ export default function ResultsPage() {
       <div className="mx-auto max-w-4xl px-6 py-14">
 
         <div className="border-b border-[rgba(15,15,15,0.12)] pb-10">
-          <FPMonogram className="mb-5 h-6 w-6 text-[rgba(15,15,15,0.38)]" />
           <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
             {T.label}
           </p>

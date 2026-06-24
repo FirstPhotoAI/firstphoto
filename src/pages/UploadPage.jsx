@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import FPMonogram from '../components/FPMonogram'
 import PhotoUploader, { MIN_PHOTOS } from '../components/PhotoUploader'
 import { analyzeAll } from '../utils/analyzeImage'
 import { useLang } from '../contexts/LangContext'
@@ -78,7 +77,6 @@ export default function UploadPage() {
   return (
     <Layout>
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <FPMonogram className="mb-5 h-6 w-6 text-[rgba(15,15,15,0.38)]" />
         <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
           {T.label}
         </p>

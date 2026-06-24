@@ -1,9 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <!-- FP Monogram: P bowl + F stem + F crossbar -->
-  <path d="M 6 29 L 6 3 L 25 3 L 25 16 L 6 16"
-        stroke="#0f0f0f" stroke-width="2"
-        stroke-linecap="square" stroke-linejoin="miter"/>
-  <line x1="6" y1="23" x2="17" y2="23"
-        stroke="#0f0f0f" stroke-width="2"
-        stroke-linecap="square"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" fill="#0f0f0f"/>
+  <text
+    x="4" y="23"
+    font-family="system-ui, -apple-system, sans-serif"
+    font-size="17"
+    font-weight="600"
+    fill="#fafaf8"
+    letter-spacing="-0.5"
+  >FP</text>
 </svg>

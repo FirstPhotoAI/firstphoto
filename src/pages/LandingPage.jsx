@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
-import FirstPhotoLogo from '../components/FirstPhotoLogo'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
 import {
@@ -94,7 +93,7 @@ export default function LandingPage() {
       countries:  Object.keys(countryCounts).length,
     })
 
-    setRecentEntries(getRecentEntries(3, 30))
+    setRecentEntries(getRecentEntries(6, 30))
   }, [])
 
   const featuredIdentities = IDENTITIES.filter((id) =>
@@ -104,150 +103,83 @@ export default function LandingPage() {
   return (
     <Layout>
 
-      {/* ── 1. Hero Image ─────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ minHeight: '82vh' }}>
-
-        {/* Full-bleed photograph */}
-        <img
-          src={HERO_IMAGE}
-          alt="Featured photograph"
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ objectPosition: 'center 30%' }}
-        />
-
-        {/* Gradient: subtle top, heavier at bottom for label legibility */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, transparent 35%, rgba(0,0,0,0.55) 100%)',
-          }}
-        />
-
-        {/* Gallery label — bottom-left, like a museum wall */}
-        <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 md:px-10 md:pb-10">
-          <p
-            className="text-[11px] font-medium uppercase tracking-[0.22em]"
-            style={{ color: 'rgba(255,255,255,0.92)' }}
-          >
-            FirstPhoto
-          </p>
-          <p
-            className="mt-1 text-[9px] uppercase tracking-[0.18em]"
-            style={{ color: 'rgba(255,255,255,0.45)' }}
-          >
-            {T.site_label}
-          </p>
-        </div>
+      {/* ── 1. Hero statement — archive identity, no tool language ────────────── */}
+      <section className="mx-auto max-w-5xl px-6 pt-14 pb-10">
+        <p className="text-[9px] uppercase tracking-[0.20em] text-[rgba(15,15,15,0.34)]">
+          FirstPhoto — {T.site_label}
+        </p>
+        <h1 className="mt-5 max-w-2xl font-display text-3xl font-light leading-snug text-[#0f0f0f] sm:text-4xl md:text-[2.6rem]">
+          {T.hero_h1}
+        </h1>
       </section>
 
-      {/* ── 2. Featured Story — museum wall caption ───────────────────────────── */}
-      <section className="mx-auto max-w-5xl px-6 py-14 md:py-16">
+      <div className="border-t border-[rgba(15,15,15,0.10)]" />
 
-        <div className="max-w-2xl">
-          <p className="text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
-            {T.featured_identity}
-          </p>
-          <p className="mt-4 font-display text-2xl font-light text-[#0f0f0f] md:text-3xl">
-            {featuredEntry?.archetype ?? '\u00A0'}
-          </p>
+      {/* ── 2. Featured story — two-column editorial layout ───────────────────── */}
+      <section className="mx-auto max-w-5xl px-6 py-12 md:py-14">
 
-          {featuredEntry?.caption && (
-            <p className="mt-5 text-sm leading-relaxed text-[rgba(15,15,15,0.58)]">
-              {featuredEntry.caption}
+        <p className="mb-8 text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
+          {T.featured_identity}
+        </p>
+
+        <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-12 lg:gap-16">
+
+          {/* Left — portrait photograph, hard-limited */}
+          <div className="w-full shrink-0 md:w-[45%]" style={{ maxWidth: '580px' }}>
+            <div className="overflow-hidden border border-[rgba(15,15,15,0.10)]">
+              <img
+                src={featuredEntry?.photo ?? HERO_IMAGE}
+                alt={featuredEntry?.archetype ?? 'Featured photograph'}
+                className="block w-full object-cover max-h-[50vh] md:max-h-[68vh]"
+                style={{ aspectRatio: '3 / 4', objectPosition: 'center 30%' }}
+              />
+            </div>
+          </div>
+
+          {/* Right — museum wall caption */}
+          <div className="flex flex-col justify-center md:flex-1 md:py-4">
+            <p className="font-display text-2xl font-light text-[#0f0f0f] md:text-3xl">
+              {featuredEntry?.archetype ?? '\u00A0'}
             </p>
-          )}
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/archive" className="btn-primary">
-              {T.preview_cta}
-            </Link>
-            {featuredEntry && (
-              <Link
-                to={`/archive/${featuredEntry.id}`}
-                className="btn-ghost"
-              >
-                {T.featured_view}
-              </Link>
+            {featuredEntry?.caption && (
+              <p className="mt-5 text-sm leading-relaxed text-[rgba(15,15,15,0.58)]">
+                {featuredEntry.caption}
+              </p>
             )}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/archive" className="btn-primary">{T.preview_cta}</Link>
+              {featuredEntry && (
+                <Link to={`/archive/${featuredEntry.id}`} className="btn-ghost">
+                  {T.featured_view}
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
       <div className="border-t border-[rgba(15,15,15,0.10)]" />
 
-      {/* ── 3. What is FirstPhoto ─────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-3xl px-6 py-14 text-center md:py-16">
-        <p className="font-display text-xl font-light leading-relaxed text-[rgba(15,15,15,0.60)] md:text-2xl">
-          {T.what_is}
-        </p>
-      </section>
+      {/* ── 3. Recent works — 6-entry grid, newest first ──────────────────────── */}
+      <section className="mx-auto max-w-5xl px-6 py-12 md:py-14">
 
-      <div className="border-t border-[rgba(15,15,15,0.10)]" />
-
-      {/* ── 4. Visual Identities ─────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-5xl px-6 py-14 md:py-16">
-        <div className="mb-10 flex items-end justify-between">
+        <div className="mb-8 flex items-end justify-between">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
-            {T.identities_label}
+            {T.recent_label}
           </p>
           <Link
-            to="/identities"
+            to="/archive"
             className="text-[10px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.40)] transition-colors hover:text-[#0f0f0f]"
           >
-            {T.identities_cta} →
+            {T.preview_cta} →
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {featuredIdentities.map((identity, i) => (
-            <IdentityTile
-              key={identity.slug}
-              identity={identity}
-              lang={lang}
-              index={i}
-            />
-          ))}
-        </div>
-      </section>
-
-      <div className="border-t border-[rgba(15,15,15,0.10)]" />
-
-      {/* ── 5. Community Archive — with live counts ───────────────────────────── */}
-      <section className="mx-auto max-w-5xl px-6 py-14 md:py-16">
-        <p className="mb-6 text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
-          {T.preview_label}
-        </p>
-        <h2 className="font-display text-3xl font-light text-[#0f0f0f] sm:text-4xl">
-          {T.preview_h2}
-        </h2>
-
-        {/* Live stats */}
-        <div className="mt-10 grid grid-cols-3 gap-6 border-t border-[rgba(15,15,15,0.10)] pt-10">
-          {[
-            { value: archiveStats.works,     label: T.stat_works },
-            { value: archiveStats.identities,label: T.stat_identities },
-            { value: archiveStats.countries, label: T.stat_countries },
-          ].map(({ value, label }) => (
-            <div key={label}>
-              <p className="font-display text-4xl font-light text-[#0f0f0f] md:text-5xl">
-                {value}
-              </p>
-              <p className="mt-2 text-[9px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.42)]">
-                {label}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Recent entries preview strip */}
+        {/* 6-entry portrait grid */}
         {recentEntries.length > 0 && (
-          <div className="mt-10 grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {recentEntries.map((entry) => (
-              <Link
-                key={entry.id}
-                to={`/archive/${entry.id}`}
-                className="group block"
-              >
+              <Link key={entry.id} to={`/archive/${entry.id}`} className="group block">
                 <div className="overflow-hidden border border-[rgba(15,15,15,0.10)]">
                   <img
                     src={entry.photo}
@@ -265,14 +197,51 @@ export default function LandingPage() {
           </div>
         )}
 
-        <div className="mt-10">
-          <Link to="/archive" className="btn-primary">{T.preview_cta}</Link>
+        {/* Live counts — archive proof */}
+        <div className="mt-10 grid grid-cols-3 gap-6 border-t border-[rgba(15,15,15,0.10)] pt-8">
+          {[
+            { value: archiveStats.works,      label: T.stat_works },
+            { value: archiveStats.identities, label: T.stat_identities },
+            { value: archiveStats.countries,  label: T.stat_countries },
+          ].map(({ value, label }) => (
+            <div key={label}>
+              <p className="font-display text-4xl font-light text-[#0f0f0f] md:text-5xl">
+                {value}
+              </p>
+              <p className="mt-2 text-[9px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.40)]">
+                {label}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
       <div className="border-t border-[rgba(15,15,15,0.10)]" />
 
-      {/* ── 6. Creator Edition — exhibition announcement ──────────────────────── */}
+      {/* ── 4. Visual Identities ─────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-5xl px-6 py-12 md:py-14">
+        <div className="mb-10 flex items-end justify-between">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
+            {T.identities_label}
+          </p>
+          <Link
+            to="/identities"
+            className="text-[10px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.40)] transition-colors hover:text-[#0f0f0f]"
+          >
+            {T.identities_cta} →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {featuredIdentities.map((identity, i) => (
+            <IdentityTile key={identity.slug} identity={identity} lang={lang} index={i} />
+          ))}
+        </div>
+      </section>
+
+      <div className="border-t border-[rgba(15,15,15,0.10)]" />
+
+      {/* ── 5. Creator Edition — exhibition announcement ──────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 py-14 md:py-20">
         <div className="flex items-center gap-4">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
@@ -391,7 +360,17 @@ export default function LandingPage() {
       {/* ── Footer ────────────────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-5xl px-6 py-8">
         <div className="flex items-center justify-between">
-          <FirstPhotoLogo size="icon" color="rgba(15,15,15,0.28)" />
+          <p
+            style={{
+              fontWeight: 500,
+              textTransform: 'uppercase',
+              fontSize: '9px',
+              letterSpacing: '0.22em',
+              color: 'rgba(15,15,15,0.30)',
+            }}
+          >
+            FirstPhoto
+          </p>
           <p className="text-[10px] text-[rgba(15,15,15,0.30)]">{T.footer}</p>
         </div>
       </div>

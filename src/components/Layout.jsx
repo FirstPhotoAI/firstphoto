@@ -1,5 +1,4 @@
 import { Link, NavLink } from 'react-router-dom'
-import FirstPhotoLogo from './FirstPhotoLogo'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
 
@@ -20,9 +19,19 @@ export default function Layout({ children }) {
       <header className="border-b border-[rgba(15,15,15,0.12)]">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
 
-          {/* Logo */}
-          <Link to="/" style={{ textDecoration: 'none' }}>
-            <FirstPhotoLogo size="medium" showText />
+          {/* Wordmark */}
+          <Link
+            to="/"
+            style={{
+              textDecoration: 'none',
+              fontWeight: 500,
+              textTransform: 'uppercase',
+              fontSize: '11px',
+              letterSpacing: '0.24em',
+              color: '#0f0f0f',
+            }}
+          >
+            FirstPhoto
           </Link>
 
           <nav className="flex items-center gap-7">
