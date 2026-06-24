@@ -14,7 +14,7 @@
 
 import { addEntry, getPublicEntries } from './archiveStore'
 
-const SEEDED_KEY = 'firstphoto_gallery_seeded_v3'
+const SEEDED_KEY = 'firstphoto_gallery_seeded_v4'
 
 // Static public assets in /public/gallery-seed/ — served by Vite, no localStorage size cost
 const PHOTOS = {
@@ -40,6 +40,8 @@ const SEED_ENTRIES = [
     keywords:        ['cinematográfico', 'movimiento', 'presencia', 'caos', 'editorial'],
     caption:         'Una figura inmóvil rodeada de movimiento. La fotografía explora la presencia en medio del caos y crea una sensación cinematográfica del tiempo que pasa.',
     creatorName:     'FirstPhoto',
+    country:         'México',
+    lang:            'es',
     isCurated:       true,
   },
 
@@ -54,6 +56,8 @@ const SEED_ENTRIES = [
     keywords:        ['doble exposición', 'experimental', 'capas', 'memoria', 'luz'],
     caption:         'Capas de luz, memoria y movimiento se fusionan, creando un retrato que se siente más recordado que observado.',
     creatorName:     'FirstPhoto',
+    country:         'México',
+    lang:            'es',
     isCurated:       true,
   },
 
@@ -68,6 +72,8 @@ const SEED_ENTRIES = [
     keywords:        ['naturaleza', 'movimiento', 'exploración', 'independencia', 'bosque'],
     caption:         'El entorno se convierte en parte de la historia. La imagen sugiere movimiento, exploración e independencia silenciosa.',
     creatorName:     'FirstPhoto',
+    country:         'México',
+    lang:            'es',
     isCurated:       true,
   },
 
@@ -82,6 +88,8 @@ const SEED_ENTRIES = [
     keywords:        ['quietud', 'monumento', 'presencia', 'retrato', 'historia'],
     caption:         'Un retrato construido sobre la quietud y la autoposesión más que sobre la actuación.',
     creatorName:     'FirstPhoto',
+    country:         'México',
+    lang:            'es',
     isCurated:       false,
   },
 
@@ -96,6 +104,8 @@ const SEED_ENTRIES = [
     keywords:        ['editorial', 'estructura', 'confianza', 'presencia', 'atemporal'],
     caption:         'Estructura limpia, confianza contenida y fuerte presencia visual crean un retrato editorial atemporal.',
     creatorName:     'FirstPhoto',
+    country:         'México',
+    lang:            'es',
     isCurated:       true,
   },
 ]
@@ -112,6 +122,7 @@ export function initializeGallery() {
     const existing = getPublicEntries()
     const hadOldSeed = localStorage.getItem('firstphoto_gallery_seeded_v1')
                     || localStorage.getItem('firstphoto_gallery_seeded_v2')
+                    || localStorage.getItem('firstphoto_gallery_seeded_v3')
     if (existing.length > 0 && !hadOldSeed) {
       // Real user content already exists (pre-seed install) — mark as done, leave untouched
       localStorage.setItem(SEEDED_KEY, '1')
@@ -122,6 +133,7 @@ export function initializeGallery() {
       localStorage.removeItem('firstphoto_archive')
       localStorage.removeItem('firstphoto_gallery_seeded_v1')
       localStorage.removeItem('firstphoto_gallery_seeded_v2')
+      localStorage.removeItem('firstphoto_gallery_seeded_v3')
     }
     // Add entries oldest-first so Entry 01 ends up at top (newest)
     ;[...SEED_ENTRIES].reverse().forEach((entry) => addEntry({ ...entry, isPublic: true }))
@@ -140,6 +152,7 @@ export function resetAndSeedGallery() {
     localStorage.removeItem(SEEDED_KEY)
     localStorage.removeItem('firstphoto_gallery_seeded_v1')
     localStorage.removeItem('firstphoto_gallery_seeded_v2')
+    localStorage.removeItem('firstphoto_gallery_seeded_v3')
     localStorage.removeItem('firstphoto_archive')
     initializeGallery()
     window.location.reload()

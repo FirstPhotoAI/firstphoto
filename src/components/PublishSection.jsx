@@ -19,6 +19,7 @@ export default function PublishSection({ ranked }) {
   const [category,   setCategory]   = useState('')
   const [impression, setImpression] = useState('')
   const [creator,    setCreator]    = useState('')
+  const [country,    setCountry]    = useState('')
   const [entryId,    setEntryId]    = useState(null)
 
   function handlePublish(e) {
@@ -39,6 +40,8 @@ export default function PublishSection({ ranked }) {
       keywords:        editorial?.keywords ?? [],
       caption,
       creatorName:     creator,
+      country,
+      lang,
       isPublic:        true,
     })
 
@@ -198,6 +201,22 @@ export default function PublishSection({ ranked }) {
           />
         </div>
 
+        {/* Country */}
+        <div>
+          <label className="mb-2 block text-[10px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.36)]">
+            {T.country_label}{' '}
+            <span className="normal-case tracking-normal opacity-60">{T.country_optional}</span>
+          </label>
+          <input
+            type="text"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder={T.country_placeholder}
+            maxLength={60}
+            className="w-full border border-[rgba(15,15,15,0.14)] bg-transparent px-4 py-2.5 text-[13px] text-[#0f0f0f] placeholder:text-[rgba(15,15,15,0.26)] focus:border-[rgba(15,15,15,0.40)] focus:outline-none"
+          />
+        </div>
+
         {/* Title */}
         <div>
           <label className="mb-2 block text-[10px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.36)]">
@@ -271,6 +290,10 @@ export default function PublishSection({ ranked }) {
             ←
           </button>
         </div>
+
+        <p className="mt-6 text-[11px] leading-relaxed text-[rgba(15,15,15,0.32)] max-w-xs">
+          {T.local_notice}
+        </p>
 
       </form>
     </section>

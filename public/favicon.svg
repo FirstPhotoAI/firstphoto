@@ -1,11 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Paper background — always visible in browser tab -->
-  <rect width="32" height="32" fill="#fafaf8"/>
-
-  <!-- Photograph frame -->
-  <rect x="1.5" y="1.5" width="29" height="29"
-    stroke="#0f0f0f" stroke-width="1.5" fill="none"/>
-
-  <!-- Focal point — the eye, the impression, the aperture -->
-  <circle cx="16" cy="15" r="3" fill="#0f0f0f"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- FP Monogram: P bowl + F stem + F crossbar -->
+  <path d="M 6 29 L 6 3 L 25 3 L 25 16 L 6 16"
+        stroke="#0f0f0f" stroke-width="2"
+        stroke-linecap="square" stroke-linejoin="miter"/>
+  <line x1="6" y1="23" x2="17" y2="23"
+        stroke="#0f0f0f" stroke-width="2"
+        stroke-linecap="square"/>
 </svg>

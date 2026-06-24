@@ -5,9 +5,9 @@
  * All data lives in localStorage — no server, no cost.
  *
  * Entry shape:
- *   { id, photo (base64), title, category, firstImpression,
+ *   { id, photo (base64 or /path), title, category, firstImpression,
  *     observation, archetype, keywords, caption,
- *     creatorName, isPublic,
+ *     creatorName, country, lang, isPublic, isCurated,
  *     publishedAt (ms timestamp) }
  *
  * Note shape (per entry):
@@ -16,7 +16,35 @@
  *
  * Backward compatibility:
  *   Existing entries without isPublic are treated as public.
- *   Existing entries without creatorName show as anonymous.
+ *   Existing entries without creatorName/country/lang are handled gracefully.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * TODO: Shared Database Migration (Phase 2)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Currently all entries live in the user's own localStorage — meaning published
+ * photos are visible only on that device. A future "public gallery" phase will
+ * require migrating archive persistence to a shared backend.
+ *
+ * Recommended options (all have free tiers and work on Cloudflare Pages):
+ *   • Supabase   — Postgres + row-level security. REST and realtime subscriptions.
+ *                  Good choice if photos are stored in Supabase Storage.
+ *   • Firebase   — Firestore (document store) + Firebase Storage for images.
+ *                  Easy real-time sync across devices.
+ *   • Cloudflare D1 / R2 — D1 (SQLite edge DB) + R2 (object storage for photos).
+ *                  Best fit if staying fully within the Cloudflare ecosystem.
+ *
+ * Migration plan:
+ *   1. Keep this file as the LOCAL store (works offline, zero latency).
+ *   2. Create a `remoteArchiveStore.js` that mirrors this API (`addEntry`,
+ *      `getPublicEntries`, etc.) but talks to the chosen backend.
+ *   3. Add a feature flag (`VITE_USE_REMOTE_STORE=true`) to switch stores.
+ *   4. On migration, seed the remote DB with existing localStorage entries
+ *      so no community content is lost.
+ *   5. Keep localStorage as a read-through cache for offline resilience.
+ *
+ * The current API surface is intentionally thin so it can be swapped out
+ * without touching any component that calls it.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 const ARCHIVE_KEY = 'firstphoto_archive'
@@ -79,7 +107,9 @@ export function getPublicEntries() {
  */
 export function addEntry({
   photo, title, category, firstImpression, observation,
-  archetype, keywords, caption = '', creatorName = '', isPublic = false, isCurated = false,
+  archetype, keywords, caption = '', creatorName = '',
+  country = '', lang = 'es',
+  isPublic = false, isCurated = false,
 }) {
   const entry = {
     id:              crypto.randomUUID(),
@@ -92,6 +122,8 @@ export function addEntry({
     keywords:        Array.isArray(keywords) ? keywords : [],
     caption:         caption?.trim()     ?? '',
     creatorName:     creatorName?.trim() ?? '',
+    country:         country?.trim()     ?? '',
+    lang:            lang                ?? 'es',
     isPublic,
     isCurated,
     publishedAt:     Date.now(),
@@ -200,4 +232,27 @@ export function getArchetypeCounts() {
     if (e.archetype) counts[e.archetype] = (counts[e.archetype] ?? 0) + 1
   })
   return counts
+}
+
+/** Returns a map of { country (lowercase): count } for all public entries with a country set. */
+export function getCountryCounts() {
+  const counts = {}
+  getPublicEntries().forEach((e) => {
+    if (e.country) {
+      const key = e.country.trim().toLowerCase()
+      if (key) counts[key] = (counts[key] ?? 0) + 1
+    }
+  })
+  return counts
+}
+
+/**
+ * Returns the N most recent public entries submitted within the last `days` days.
+ * Falls back to the newest N entries if none are recent (e.g. seed data with old timestamps).
+ */
+export function getRecentEntries(n = 3, days = 30) {
+  const all    = getPublicEntries().sort((a, b) => b.publishedAt - a.publishedAt)
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
+  const recent = all.filter((e) => e.publishedAt >= cutoff)
+  return (recent.length >= n ? recent : all).slice(0, n)
 }

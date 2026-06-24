@@ -1,8 +1,8 @@
 /**
  * FPMonogram — the FirstPhoto mark as a bare SVG.
  *
- * A thin photograph frame with a single focal point.
- * The square = the photograph. The circle = the eye, the moment, the impression.
+ * FP monogram: F and P fused. Shared vertical stem.
+ * Closed rectangular bowl reads as P. Stem below reads as F.
  *
  * Uses currentColor so colour is controlled by the parent via Tailwind text-* classes.
  * Renders cleanly from 16 px (favicon) through 48 px (hero).
@@ -16,15 +16,20 @@ export default function FPMonogram({ className = '' }) {
       className={className}
       aria-hidden="true"
     >
-      {/* Photograph frame */}
-      <rect
-        x="1.5" y="1.5"
-        width="29" height="29"
+      <path
+        d="M 6 29 L 6 3 L 25 3 L 25 16 L 6 16"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="2"
+        strokeLinecap="square"
+        strokeLinejoin="miter"
       />
-      {/* Focal point — the eye, the impression, the aperture */}
-      <circle cx="16" cy="15" r="3" fill="currentColor" />
+      <line
+        x1="6" y1="23"
+        x2="17" y2="23"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="square"
+      />
     </svg>
   )
 }

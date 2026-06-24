@@ -22,7 +22,7 @@ export default function Layout({ children }) {
 
           {/* Logo */}
           <Link to="/" style={{ textDecoration: 'none' }}>
-            <FirstPhotoLogo size="small" showText />
+            <FirstPhotoLogo size="medium" showText />
           </Link>
 
           <nav className="flex items-center gap-7">
