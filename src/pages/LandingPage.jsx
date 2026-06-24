@@ -9,9 +9,11 @@ import {
   getArchetypeCounts,
   getCountryCounts,
   getHomepageRecentWorks,
+  getArchiveCount,
+  ARCHIVE_UPDATED_EVENT,
 } from '../data/archiveStore'
 import { IDENTITIES } from '../data/identities'
-import SeriesPhotoStrip from '../components/SeriesPhotoStrip'
+import { getIdentityTypeLabel } from '../utils/archiveMetadata'
 
 // ─── Plans table ──────────────────────────────────────────────────────────────
 
@@ -82,19 +84,27 @@ export default function LandingPage() {
   const [archiveStats,   setArchiveStats]   = useState({ works: 0, identities: 0, countries: 0 })
   const [recentEntries,  setRecentEntries]  = useState([])
 
+  const [archiveCount, setArchiveCount] = useState(0)
+
   useEffect(() => {
-    setFeaturedEntry(getCuratorPicks(1)[0] ?? null)
+    function refresh() {
+      setFeaturedEntry(getCuratorPicks(1)[0] ?? null)
 
-    const entries         = getPublicEntries()
-    const archetypeCounts = getArchetypeCounts()
-    const countryCounts   = getCountryCounts()
-    setArchiveStats({
-      works:      entries.length,
-      identities: Object.keys(archetypeCounts).length,
-      countries:  Object.keys(countryCounts).length,
-    })
+      const entries         = getPublicEntries()
+      const archetypeCounts = getArchetypeCounts()
+      const countryCounts   = getCountryCounts()
+      setArchiveStats({
+        works:      entries.length,
+        identities: Object.keys(archetypeCounts).length,
+        countries:  Object.keys(countryCounts).length,
+      })
+      setArchiveCount(getArchiveCount())
+      setRecentEntries(getHomepageRecentWorks(12))
+    }
 
-    setRecentEntries(getHomepageRecentWorks(12))
+    refresh()
+    window.addEventListener(ARCHIVE_UPDATED_EVENT, refresh)
+    return () => window.removeEventListener(ARCHIVE_UPDATED_EVENT, refresh)
   }, [])
 
   const featuredIdentities = IDENTITIES.filter((id) =>
@@ -104,7 +114,7 @@ export default function LandingPage() {
   return (
     <Layout>
 
-      {/* ── 1. Hero statement ─────────────────────────────────────────────────── */}
+      {/* ── 1. Hero ─────────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 pt-7 pb-6 md:pt-14 md:pb-10">
         <p className="text-[9px] uppercase tracking-[0.20em] text-[rgba(15,15,15,0.34)]">
           FirstPhoto — {T.site_label}
@@ -112,6 +122,16 @@ export default function LandingPage() {
         <h1 className="mt-3 max-w-2xl font-display text-2xl font-light leading-snug text-[#0f0f0f] sm:text-3xl md:text-[2.6rem]">
           {T.hero_h1}
         </h1>
+        <p className="mt-5 max-w-xl text-sm leading-relaxed text-[rgba(15,15,15,0.55)] md:text-[15px]">
+          {T.hero_subtitle}
+        </p>
+        <p className="mt-4 text-[11px] leading-relaxed text-[rgba(15,15,15,0.40)]">
+          {T.hero_reassurance}
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link to="/upload" className="btn-primary">{T.participate_btn}</Link>
+          <Link to="/archive" className="btn-ghost">{T.cta_archive}</Link>
+        </div>
       </section>
 
       <div className="border-t border-[rgba(15,15,15,0.10)]" />
@@ -120,9 +140,14 @@ export default function LandingPage() {
       <section className="mx-auto max-w-5xl px-6 py-8 md:py-12">
 
         <div className="mb-6 flex items-end justify-between">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
-            {T.recent_label}
-          </p>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
+              {T.recent_label}
+            </p>
+            <p className="mt-2 max-w-lg text-[12px] leading-relaxed text-[rgba(15,15,15,0.48)]">
+              {T.recent_subcopy}
+            </p>
+          </div>
           <Link
             to="/archive"
             className="text-[10px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.40)] transition-colors hover:text-[#0f0f0f]"
@@ -133,19 +158,21 @@ export default function LandingPage() {
 
         {recentEntries.length > 0 && (
           <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3">
-            {recentEntries.map((entry) => (
+            {recentEntries.map((entry) => {
+              const title = entry.title || getIdentityTypeLabel(entry.identityType, lang) || entry.category
+              return (
               <Link key={entry.id} to={`/archive/${entry.id}`} className="group block">
                 <SeriesPhotoStrip
                   entry={entry}
-                  alt={entry.archetype || entry.category}
+                  alt={title}
                 />
-                {entry.archetype && (
-                  <p className="mt-1.5 truncate text-[9px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.38)]">
-                    {entry.archetype}
+                {title && (
+                  <p className="mt-1.5 truncate text-[11px] text-[#0f0f0f]">
+                    {title}
                   </p>
                 )}
               </Link>
-            ))}
+            )})}
           </div>
         )}
 
@@ -177,6 +204,9 @@ export default function LandingPage() {
           </p>
           <div className="mt-5">
             <Link to="/upload" className="btn-primary">{T.participate_btn}</Link>
+            <p className="mt-3 text-[11px] text-[rgba(15,15,15,0.40)]">
+              {T.cta_trust}
+            </p>
           </div>
         </div>
       </section>
@@ -186,9 +216,14 @@ export default function LandingPage() {
       {/* ── 3. Visual Identities ─────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 py-10 md:py-14">
         <div className="mb-8 flex items-end justify-between md:mb-10">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
-            {T.identities_label}
-          </p>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
+              {T.identities_label}
+            </p>
+            <p className="mt-2 max-w-lg text-[12px] leading-relaxed text-[rgba(15,15,15,0.48)]">
+              {T.identities_subcopy}
+            </p>
+          </div>
           <Link
             to="/identities"
             className="text-[10px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.40)] transition-colors hover:text-[#0f0f0f]"
@@ -209,8 +244,14 @@ export default function LandingPage() {
       {/* ── 4. Featured story — smaller image, supports the narrative ─────────── */}
       <section className="mx-auto max-w-5xl px-6 py-10 md:py-12">
 
-        <p className="mb-6 text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
+        <p className="mb-2 text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
           {T.featured_identity}
+        </p>
+        <h2 className="mb-6 max-w-xl font-display text-xl font-light text-[#0f0f0f] md:text-2xl">
+          {T.featured_h2}
+        </h2>
+        <p className="mb-6 max-w-lg text-sm leading-relaxed text-[rgba(15,15,15,0.50)]">
+          {T.featured_subcopy}
         </p>
 
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-10 lg:gap-12">
@@ -273,6 +314,13 @@ export default function LandingPage() {
         <h2 className="mt-8 max-w-2xl font-display text-3xl font-light leading-snug text-[#0f0f0f] sm:text-[2.5rem]">
           {T.creator_h2}
         </h2>
+        <p className="mt-4 max-w-lg text-sm leading-relaxed text-[rgba(15,15,15,0.52)]">
+          {T.creator_description}
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link to="/creator" className="btn-primary">{T.creator_cta}</Link>
+          <Link to="/archive" className="btn-ghost">{T.cta_archive}</Link>
+        </div>
 
         <div className="mt-12 border-t border-[rgba(15,15,15,0.10)] pt-10">
           <div className="grid gap-x-16 sm:grid-cols-2">
@@ -289,10 +337,6 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-
-        <p className="mt-10 max-w-md text-sm italic leading-relaxed text-[rgba(15,15,15,0.38)]">
-          {T.creator_description}
-        </p>
       </section>
 
       <div className="border-t border-[rgba(15,15,15,0.10)]" />
@@ -305,11 +349,21 @@ export default function LandingPage() {
         <h2 className="font-display text-3xl font-light text-[#0f0f0f] sm:text-4xl">
           {T.share_h2}
         </h2>
-        <p className="mt-5 max-w-md text-sm leading-relaxed text-[rgba(15,15,15,0.52)]">
+        <p className="mt-5 max-w-lg text-sm leading-relaxed text-[rgba(15,15,15,0.52)]">
           {T.share_description}
         </p>
+        {archiveCount > 0 && (
+          <p className="mt-5 text-[11px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.38)]">
+            {archiveCount === 1
+              ? T.archive_counter_1.replace('{n}', archiveCount)
+              : T.archive_counter_n.replace('{n}', archiveCount)}
+          </p>
+        )}
         <div className="mt-8">
-          <Link to="/upload" className="btn-primary">{T.participate_btn}</Link>
+          <Link to="/upload" className="btn-primary">{T.share_cta}</Link>
+          <p className="mt-3 text-[11px] text-[rgba(15,15,15,0.40)]">
+            {T.cta_trust}
+          </p>
         </div>
       </section>
 

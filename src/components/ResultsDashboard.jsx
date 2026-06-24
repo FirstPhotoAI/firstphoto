@@ -4,6 +4,7 @@ import { translations } from '../i18n'
 import { SeriesPhotoGrid } from './SeriesPhotoStrip'
 import { getSeriesPreviews } from '../utils/photoSeries'
 import { logSeries } from '../utils/debugSeries'
+import { analyzeSeriesContext, getConsistencyWarning } from '../utils/seriesAnalysis'
 
 // ─── Vote helpers (localStorage) ──────────────────────────────────────────────
 
@@ -162,11 +163,13 @@ function getRankedPhoto(ranked, photos, index) {
   }
 }
 
-function SummaryView({ ranked, portfolio, photos, T }) {
+function SummaryView({ ranked, portfolio, photos, T, lang }) {
   const sequence   = resolveSequence(ranked, portfolio, photos)
   const series     = resolveSeriesObservation(portfolio, ranked)
   const identity   = portfolio?.visual_identity ?? ranked[0]?.analysis?.editorial?.archetype ?? ''
   const allPhotos  = getSeriesPreviews(photos, ranked)
+  const context    = portfolio?.series_context ?? analyzeSeriesContext(ranked)
+  const warning    = getConsistencyWarning(context, lang)
 
   const roleLabel  = (role) => T[ROLE_LABEL_KEY[role]] ?? role
   const countLabel = T.series_count.replace('{n}', allPhotos.length)
@@ -190,6 +193,12 @@ function SummaryView({ ranked, portfolio, photos, T }) {
         alt={T.series_label}
         className="mt-6"
       />
+
+      {warning && (
+        <p className="mt-5 max-w-lg border-l border-[rgba(15,15,15,0.18)] pl-4 text-[12px] leading-relaxed text-[rgba(15,15,15,0.52)]">
+          {warning}
+        </p>
+      )}
 
       <div className="my-10 border-t border-[rgba(15,15,15,0.10)]" />
 
@@ -569,7 +578,7 @@ export default function ResultsDashboard({ ranked, portfolio, photos }) {
     <div>
 
       {/* ── Always visible: full series + sequence + observation ── */}
-      <SummaryView ranked={ranked} portfolio={portfolio} photos={displayPhotos} T={T} />
+      <SummaryView ranked={ranked} portfolio={portfolio} photos={displayPhotos} T={T} lang={lang} />
 
       {/* ── Expandable full analysis ── */}
       <div className="border-t border-[rgba(15,15,15,0.12)]">

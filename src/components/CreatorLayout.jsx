@@ -1,30 +1,23 @@
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
-import MobileUploadCta, { isStickyUploadVisible } from './MobileUploadCta'
 
-const NAV_BASE     = 'text-[10px] uppercase tracking-[0.16em] transition-colors'
-const NAV_ACTIVE   = 'text-[#0f0f0f]'
-const NAV_INACTIVE = 'text-[rgba(15,15,15,0.42)] hover:text-[#0f0f0f]'
+const NAV_BASE = 'text-[10px] uppercase tracking-[0.16em] transition-colors'
 
 function navClass({ isActive }) {
-  return `${NAV_BASE} ${isActive ? NAV_ACTIVE : NAV_INACTIVE}`
+  return `${NAV_BASE} ${isActive ? 'text-[#0f0f0f]' : 'text-[rgba(15,15,15,0.42)] hover:text-[#0f0f0f]'}`
 }
 
-export default function Layout({ children }) {
+export default function CreatorLayout({ children }) {
   const { lang, setLang } = useLang()
-  const T = translations[lang].nav
-  const { pathname } = useLocation()
-  const stickyUpload = isStickyUploadVisible(pathname)
+  const T = translations[lang].cullNav
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       <header className="border-b border-[rgba(15,15,15,0.12)]">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-
-          {/* Wordmark */}
           <Link
-            to="/"
+            to="/creator"
             style={{
               textDecoration: 'none',
               fontWeight: 500,
@@ -34,24 +27,16 @@ export default function Layout({ children }) {
               color: '#0f0f0f',
             }}
           >
-            FirstPhoto
+            FirstPhoto Creator
           </Link>
 
           <nav className="flex items-center gap-7">
-            <NavLink to="/archive" className={navClass} end>
-              {T.archive}
+            <NavLink to="/creator/cull" className={navClass}>
+              {T.cull}
             </NavLink>
-            <NavLink to="/creator" className={navClass}>
-              {T.creator}
+            <NavLink to="/creator/results" className={navClass}>
+              {T.results}
             </NavLink>
-            <NavLink to="/identities" className={navClass}>
-              {T.identities}
-            </NavLink>
-            <NavLink to="/upload" className={navClass} end>
-              {T.study}
-            </NavLink>
-
-            {/* Language toggle — ES / EN / JA */}
             <div className="flex items-center gap-3">
               {[
                 { code: 'es', label: 'ES' },
@@ -67,18 +52,15 @@ export default function Layout({ children }) {
                       ? 'text-[#0f0f0f]'
                       : 'text-[rgba(15,15,15,0.32)] hover:text-[#0f0f0f]'
                   }`}
-                  aria-label={`Switch to ${label}`}
                 >
                   {label}
                 </button>
               ))}
             </div>
           </nav>
-
         </div>
       </header>
-      <main className={stickyUpload ? 'pb-24 md:pb-0' : undefined}>{children}</main>
-      <MobileUploadCta />
+      <main>{children}</main>
     </div>
   )
 }

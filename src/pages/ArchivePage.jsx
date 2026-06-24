@@ -12,12 +12,14 @@ import {
   getEntriesByCategory,
   getArchetypeCounts,
   getEntryPhotos,
+  getDisplayArchiveNumber,
   ARCHIVE_UPDATED_EVENT,
   CATEGORIES,
   CATEGORIES_EN,
   ARCHETYPES_ES,
   ARCHETYPES_EN,
 } from '../data/archiveStore'
+import { getIdentityTypeLabel } from '../utils/archiveMetadata'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
 import SeriesPhotoStrip from '../components/SeriesPhotoStrip'
@@ -25,55 +27,45 @@ import { logSeries } from '../utils/debugSeries'
 
 // ─── Post card ─────────────────────────────────────────────────────────────────
 
-function GalleryCard({ entry, T }) {
-  const noteCount  = getNoteCount(entry.id)
+function GalleryCard({ entry, T, lang }) {
   const photoCount = getEntryPhotos(entry).length
-  const notesLabel = noteCount === 0
-    ? T.notes_0
-    : noteCount === 1
-      ? T.notes_1
-      : T.notes_n.replace('{n}', noteCount)
+  const entryNum   = getDisplayArchiveNumber(entry)
+  const identityLabel = entry.identityType
+    ? getIdentityTypeLabel(entry.identityType, lang)
+    : null
+  const cardTitle = entry.title || identityLabel || entry.category || ''
+  const photoLabel = photoCount === 1
+    ? T.photos_short_1
+    : T.photos_short_n.replace('{n}', photoCount)
 
-  const caption = entry.caption
-    || (entry.observation ? entry.observation.slice(0, 110) + (entry.observation.length > 110 ? '…' : '') : '')
-
-  const creator = entry.creatorName || T.anonymous
+  const metaParts = [
+    photoCount > 0 ? photoLabel : null,
+    entryNum ? T.entry_label.replace('{n}', entryNum) : null,
+  ].filter(Boolean)
 
   return (
     <Link to={`/archive/${entry.id}`} className="group block">
-      <SeriesPhotoStrip
-        entry={entry}
-        alt={entry.title || entry.archetype || entry.category}
-      />
-
-      <div className="mt-3 border-b border-[rgba(15,15,15,0.07)] pb-4">
-        {photoCount > 1 && (
-          <p className="text-[9px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.34)]">
-            {T.series_count.replace('{n}', photoCount)}
-          </p>
-        )}
-        {caption && (
-          <p className={`text-[12px] italic leading-relaxed text-[rgba(15,15,15,0.52)] ${photoCount > 1 ? 'mt-2' : ''}`}>
-            {caption}
-          </p>
-        )}
-        {entry.archetype && (
-          <p className="mt-2 text-[9px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.28)]">
-            {entry.archetype}
-          </p>
-        )}
-        {entry.title && (
-          <p className="mt-1 truncate text-[13px] text-[#0f0f0f]">{entry.title}</p>
-        )}
+      <div className="overflow-hidden transition-opacity duration-200 group-hover:opacity-90">
+        <SeriesPhotoStrip
+          entry={entry}
+          alt={cardTitle}
+        />
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <span className="truncate text-[11px] text-[rgba(15,15,15,0.36)]">{creator}</span>
-        <span className={`shrink-0 text-[10px] uppercase tracking-[0.12em] ${
-          noteCount > 0 ? 'text-[rgba(15,15,15,0.50)]' : 'text-[rgba(15,15,15,0.22)]'
-        }`}>
-          {notesLabel}
-        </span>
+      <div className="mt-2.5">
+        {cardTitle && (
+          <p className="truncate text-[13px] text-[#0f0f0f]">{cardTitle}</p>
+        )}
+        {identityLabel && cardTitle !== identityLabel && (
+          <p className="mt-1 truncate text-[11px] text-[rgba(15,15,15,0.48)]">
+            {identityLabel}
+          </p>
+        )}
+        {metaParts.length > 0 && (
+          <p className="mt-1.5 text-[10px] uppercase tracking-[0.12em] text-[rgba(15,15,15,0.36)]">
+            {metaParts.join(' · ')}
+          </p>
+        )}
       </div>
     </Link>
   )
@@ -81,10 +73,16 @@ function GalleryCard({ entry, T }) {
 
 // ─── Featured / hero card ──────────────────────────────────────────────────────
 
-function FeaturedCard({ entry, T }) {
-  const noteCount  = getNoteCount(entry.id)
-  const notesLabel = noteCount === 1 ? T.notes_1 : T.notes_n.replace('{n}', noteCount)
-  const creator    = entry.creatorName || T.anonymous
+function FeaturedCard({ entry, T, lang }) {
+  const photoCount = getEntryPhotos(entry).length
+  const entryNum   = getDisplayArchiveNumber(entry)
+  const identityLabel = entry.identityType
+    ? getIdentityTypeLabel(entry.identityType, lang)
+    : null
+  const cardTitle = entry.title || identityLabel || entry.category || ''
+  const photoLabel = photoCount === 1
+    ? T.photos_short_1
+    : T.photos_short_n.replace('{n}', photoCount)
 
   return (
     <Link
@@ -94,7 +92,7 @@ function FeaturedCard({ entry, T }) {
       <div className="overflow-hidden">
         <SeriesPhotoStrip
           entry={entry}
-          alt={entry.title || entry.archetype || ''}
+          alt={cardTitle}
           className="h-full min-h-[300px] sm:min-h-[440px] [&_img]:h-full [&_img]:min-h-[300px] [&_img]:sm:min-h-[440px] [&_img]:aspect-auto"
           hover
         />
@@ -106,31 +104,21 @@ function FeaturedCard({ entry, T }) {
               {T.curator_badge}
             </p>
           )}
-          {(entry.caption || entry.observation) && (
-            <p className="text-[14px] italic leading-[1.9] text-[rgba(15,15,15,0.58)]">
-              {entry.caption || entry.observation.slice(0, 200) + (entry.observation.length > 200 ? '…' : '')}
-            </p>
-          )}
-          {entry.archetype && (
-            <p className="mt-4 text-[10px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.30)]">
-              {entry.archetype}
-            </p>
-          )}
-          {entry.title && (
-            <h3 className="mt-3 font-display text-2xl font-light text-[#0f0f0f] sm:text-3xl">
-              {entry.title}
+          {cardTitle && (
+            <h3 className="font-display text-2xl font-light text-[#0f0f0f] sm:text-3xl">
+              {cardTitle}
             </h3>
           )}
-        </div>
-        <div className="mt-8 flex items-end justify-between">
-          <div>
-            <p className="text-[11px] text-[rgba(15,15,15,0.40)]">{creator}</p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.28)]">
-              {entry.category}
+          {identityLabel && cardTitle !== identityLabel && (
+            <p className="mt-2 text-[12px] text-[rgba(15,15,15,0.48)]">{identityLabel}</p>
+          )}
+          <p className="mt-4 text-[10px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.36)]">
+            {[photoLabel, entryNum ? T.entry_label.replace('{n}', entryNum) : null].filter(Boolean).join(' · ')}
+          </p>
+          {(entry.caption || entry.observation) && (
+            <p className="mt-5 text-[14px] italic leading-[1.9] text-[rgba(15,15,15,0.58)]">
+              {entry.caption || entry.observation.slice(0, 200) + (entry.observation.length > 200 ? '…' : '')}
             </p>
-          </div>
-          {noteCount > 0 && (
-            <span className="text-[11px] text-[rgba(15,15,15,0.38)]">{notesLabel}</span>
           )}
         </div>
       </div>
@@ -305,7 +293,7 @@ export default function ArchivePage() {
             ) : (
               <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 md:grid-cols-3">
                 {filteredEntries.map((entry) => (
-                  <GalleryCard key={entry.id} entry={entry} T={T} />
+                  <GalleryCard key={entry.id} entry={entry} T={T} lang={lang} />
                 ))}
               </div>
             )}
@@ -320,7 +308,7 @@ export default function ArchivePage() {
               <GallerySection label={T.community}>
                 <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 md:grid-cols-3">
                   {community.map((entry) => (
-                    <GalleryCard key={entry.id} entry={entry} T={T} />
+                    <GalleryCard key={entry.id} entry={entry} T={T} lang={lang} />
                   ))}
                 </div>
               </GallerySection>
@@ -329,11 +317,11 @@ export default function ArchivePage() {
             {/* 1. Curator Picks — hero + grid of curated entries */}
             {curatorPicks.length > 0 && (
               <GallerySection label={T.curator_picks}>
-                <FeaturedCard entry={curatorPicks[0]} T={T} />
+                <FeaturedCard entry={curatorPicks[0]} T={T} lang={lang} />
                 {curatorPicks.length > 1 && (
                   <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 md:grid-cols-3">
                     {curatorPicks.slice(1, 4).map((entry) => (
-                      <GalleryCard key={entry.id} entry={entry} T={T} />
+                      <GalleryCard key={entry.id} entry={entry} T={T} lang={lang} />
                     ))}
                   </div>
                 )}
@@ -345,7 +333,7 @@ export default function ArchivePage() {
               <GallerySection label={T.featured}>
                 <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 md:grid-cols-3">
                   {discussed.map((entry) => (
-                    <GalleryCard key={entry.id} entry={entry} T={T} />
+                    <GalleryCard key={entry.id} entry={entry} T={T} lang={lang} />
                   ))}
                 </div>
               </GallerySection>
@@ -384,7 +372,7 @@ export default function ArchivePage() {
               <GallerySection label={T.newest}>
                 <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 md:grid-cols-3">
                   {newest.map((entry) => (
-                    <GalleryCard key={entry.id} entry={entry} T={T} />
+                    <GalleryCard key={entry.id} entry={entry} T={T} lang={lang} />
                   ))}
                 </div>
               </GallerySection>
@@ -401,6 +389,8 @@ export default function ArchivePage() {
 // ─── Header sub-component ──────────────────────────────────────────────────────
 
 function GalleryHeader({ T, totalCount }) {
+  const LOW = 5
+
   return (
     <div className="border-b border-[rgba(15,15,15,0.12)] pb-10">
       <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
@@ -414,16 +404,29 @@ function GalleryHeader({ T, totalCount }) {
           {T.btn_submit}
         </Link>
       </div>
-      <p className="mt-4 max-w-md text-[13px] leading-[1.75] text-[rgba(15,15,15,0.48)]">
+      <p className="mt-4 max-w-lg text-[13px] leading-[1.75] text-[rgba(15,15,15,0.48)]">
         {T.submit_msg}
       </p>
-      {totalCount > 0 && (
-        <p className="mt-3 text-[10px] text-[rgba(15,15,15,0.26)]">
-          {totalCount === 1
-            ? T.count_1.replace('{n}', totalCount)
-            : T.count_n.replace('{n}', totalCount)}
-        </p>
-      )}
+      <div className="mt-3 space-y-1">
+        {totalCount === 0 ? (
+          <p className="text-[11px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.38)]">
+            {T.counter_zero}
+          </p>
+        ) : (
+          <>
+            <p className="text-[11px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.38)]">
+              {totalCount === 1
+                ? T.counter_1.replace('{n}', totalCount)
+                : T.counter_n.replace('{n}', totalCount)}
+            </p>
+            {totalCount < LOW && (
+              <p className="text-[12px] leading-relaxed text-[rgba(15,15,15,0.42)]">
+                {T.counter_low}
+              </p>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

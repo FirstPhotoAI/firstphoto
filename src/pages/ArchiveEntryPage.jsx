@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
-import { addNote, getEntry, getNotes, getNoteCount, getEntryPhotos } from '../data/archiveStore'
+import { addNote, getEntry, getNotes, getNoteCount, getEntryPhotos, getDisplayArchiveNumber } from '../data/archiveStore'
+import { getIdentityTypeLabel } from '../utils/archiveMetadata'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
 import { SeriesPhotoGrid } from '../components/SeriesPhotoStrip'
@@ -206,6 +207,10 @@ export default function ArchiveEntryPage() {
   const noteCount = getNoteCount(entry.id)
   const creator   = entry.creatorName || TG.anonymous
   const photos    = getEntryPhotos(entry)
+  const entryNum  = getDisplayArchiveNumber(entry)
+  const identityLabel = entry.identityType
+    ? getIdentityTypeLabel(entry.identityType, lang)
+    : null
 
   return (
     <Layout>
@@ -225,6 +230,22 @@ export default function ArchiveEntryPage() {
 
         {/* ── Metadata ────────────────────────────────────────────────────── */}
         <div className="mt-7 border-b border-[rgba(15,15,15,0.10)] pb-7">
+
+          {(entryNum || identityLabel) && (
+            <div className="mb-4 space-y-1">
+              {entryNum && (
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.42)]">
+                  {T.entry_label.replace('{n}', entryNum)}
+                </p>
+              )}
+              {identityLabel && (
+                <p className="text-[12px] leading-relaxed text-[rgba(15,15,15,0.52)]">
+                  {T.type_label}:{' '}
+                  <span className="text-[#0f0f0f]">{identityLabel}</span>
+                </p>
+              )}
+            </div>
+          )}
 
           {photos.length > 1 && (
             <p className="text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.38)]">

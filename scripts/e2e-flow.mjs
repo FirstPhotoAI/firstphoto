@@ -64,12 +64,9 @@ async function main() {
   const imgCount = await gridImages.count()
   console.log('visible data: images on results page:', imgCount)
 
-  await page.getByRole('button', { name: /publicar|publish|ギャラリー/i }).first().click()
-  await page.locator('select').selectOption({ index: 1 })
-  await page.getByRole('button', { name: /cercano|approachable|親し/i }).click()
-  await page.getByRole('button', { name: /publicar|publish|ギャラリー/i }).last().click()
+  await page.getByRole('button', { name: /guardar|save|保存/i }).click()
 
-  await page.waitForSelector('text=/publicada|published|投稿され/', { timeout: 30000 })
+  await page.waitForSelector('text=/guardado|saved|保存しました/i', { timeout: 30000 })
 
   const publishLog = logs.find((l) => l.includes('publishing photos'))
   const entriesBefore = logs.find((l) => l.includes('entries before'))

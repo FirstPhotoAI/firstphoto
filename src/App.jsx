@@ -6,6 +6,9 @@ import ResultsPage from './pages/ResultsPage'
 import ArchivePage from './pages/ArchivePage'
 import ArchiveEntryPage from './pages/ArchiveEntryPage'
 import IdentitiesPage from './pages/IdentitiesPage'
+import CreatorPage from './pages/CreatorPage'
+import CreatorCullPage from './pages/CreatorCullPage'
+import CreatorCullResultsPage from './pages/CreatorCullResultsPage'
 import { initializeGallery, resetAndSeedGallery } from './data/gallerySeeder'
 
 // Seed the Community Gallery with founder entries on first visit.
@@ -25,6 +28,9 @@ export default function App() {
         <Route path="/archive/:id"      element={<ArchiveEntryPage />} />
         <Route path="/identities"       element={<IdentitiesPage />} />
         <Route path="/identities/:slug" element={<IdentitiesPage />} />
+        <Route path="/creator"          element={<CreatorPage />} />
+        <Route path="/creator/cull"     element={<CreatorCullPage />} />
+        <Route path="/creator/results"  element={<CreatorCullResultsPage />} />
         <Route path="/upload"      element={<UploadPage />} />
         <Route path="/results"     element={<ResultsPage />} />
       </Routes>

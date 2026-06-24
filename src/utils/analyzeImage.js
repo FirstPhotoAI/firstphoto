@@ -27,6 +27,8 @@
  *   }
  */
 
+import { buildContextualSequence, buildContextualObservation } from './seriesAnalysis.js'
+
 // ─── Canvas size ─────────────────────────────────────────────────────────────
 // All images are drawn into a fixed bounding box before analysis.
 // Aspect ratio is preserved. Using 300 gives enough pixel density for
@@ -1274,6 +1276,8 @@ function buildPortfolioFeedback(rankedPhotos, lang = 'es') {
   else if (avgBr  < 95 && avgCr > 38) portfolioStyle = 'cinematic'
   else if (avgSat > 0.60)              portfolioStyle = 'vibrant'
 
+  const seq = buildContextualSequence(rankedPhotos, lang)
+
   return {
     selected_image:                 selectedImage,
     visual_identity:                winner.photo.analysis.editorial.archetype,
@@ -1285,8 +1289,9 @@ function buildPortfolioFeedback(rankedPhotos, lang = 'es') {
     })),
     what_makes_the_winner_stronger: buildWhatMakesWinnerStronger(n, winnerScores, otherScores, lang),
     future_exploration:             buildFutureExploration(n, portfolioStyle, lang),
-    suggested_sequence:             buildSuggestedSequence(n, rankedPhotos, lang),
-    series_observation:             buildSeriesObservation(n, rankedPhotos, portfolioStyle, lang),
+    suggested_sequence:             { order: seq.order, items: seq.items },
+    series_context:                 seq.series_context,
+    series_observation:             buildContextualObservation(rankedPhotos, seq.series_context, lang),
   }
 }
 

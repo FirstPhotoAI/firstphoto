@@ -75,6 +75,12 @@ export default function ResultsPage() {
               {T.new_study}
             </Link>
           </div>
+          <p className="mt-3 text-[13px] leading-relaxed text-[rgba(15,15,15,0.52)]">
+            {T.subtitle}
+          </p>
+          <p className="mt-2 text-[11px] text-[rgba(15,15,15,0.38)]">
+            {T.private_notice}
+          </p>
           <p className="mt-4 text-[11px] text-[rgba(15,15,15,0.42)]">
             {photos.length} {countLabel} · {studyDate} · Canvas API
           </p>

@@ -5,10 +5,10 @@
  * All data lives in localStorage — no server, no cost.
  *
  * Entry shape:
- *   { id, photo (cover), photos (array), photoCount, title, category, firstImpression,
- *     observation, archetype, keywords, caption,
- *     creatorName, country, lang, isPublic, isCurated,
- *     publishedAt (ms timestamp) }
+ *   { id, photo (cover), photos (array), photoCount, archiveNumber, title, category,
+ *     identityType, firstImpression, observation, archetype, keywords, caption,
+ *     suggested_sequence, series_context, creatorName, country, lang, isPublic,
+ *     isCurated, publishedAt, createdAt (ms timestamps) }
  *
  * Note shape (per entry):
  *   { id, author, text, timestamp (ms) }
@@ -136,6 +136,27 @@ export function getEntryPhotos(entry) {
  */
 export const ARCHIVE_UPDATED_EVENT = 'firstphoto:archive-updated'
 
+/** Total public archive entries. */
+export function getArchiveCount() {
+  return getPublicEntries().length
+}
+
+/** Next sequential archive number (monotonic across all entries). */
+function getNextArchiveNumber() {
+  return getEntries().reduce((max, e) => Math.max(max, e.archiveNumber ?? 0), 0) + 1
+}
+
+/** Display number for legacy entries missing archiveNumber. */
+export function getDisplayArchiveNumber(entry) {
+  if (!entry) return null
+  if (entry.archiveNumber) return entry.archiveNumber
+  const sorted = [...getPublicEntries()].sort(
+    (a, b) => (a.publishedAt ?? a.createdAt ?? 0) - (b.publishedAt ?? b.createdAt ?? 0)
+  )
+  const idx = sorted.findIndex((e) => e.id === entry.id)
+  return idx >= 0 ? idx + 1 : null
+}
+
 export function addEntry(input) {
   logSeries('archiveStore: addEntry(input)', {
     photosLen: Array.isArray(input.photos) ? input.photos.length : 0,
@@ -154,16 +175,20 @@ export function addEntry(input) {
 
   const entry = normalizeEntry({
     id:              crypto.randomUUID(),
+    archiveNumber:   input.archiveNumber ?? getNextArchiveNumber(),
     photo,
     photos,
     photoCount:      photos.length,
     title:           input.title?.trim()       ?? '',
     category:        input.category,
+    identityType:    input.identityType        ?? '',
     firstImpression: input.firstImpression,
     observation:     input.observation,
     archetype:       input.archetype           ?? '',
     keywords:        Array.isArray(input.keywords) ? input.keywords : [],
     caption:         input.caption?.trim()     ?? '',
+    suggested_sequence: input.suggested_sequence ?? null,
+    series_context:     input.series_context     ?? null,
     creatorName:     input.creatorName?.trim() ?? '',
     country:         input.country?.trim()     ?? '',
     lang:            input.lang                ?? 'es',
