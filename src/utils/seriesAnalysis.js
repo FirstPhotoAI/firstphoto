@@ -435,6 +435,83 @@ export function buildContextualObservation(rankedPhotos, context, lang = 'es') {
   return fallback
 }
 
+/**
+ * 2–3 practical tips before publishing — selection, order, rhythm only.
+ */
+export function buildBeforePublishingAdvice(rankedPhotos, portfolio, sequence, lang = 'es') {
+  const es = lang === 'es'
+  const ja = lang === 'ja'
+  const count = rankedPhotos.length
+  if (!count) return []
+
+  const context = portfolio?.series_context ?? analyzeSeriesContext(rankedPhotos)
+  const items = sequence?.items ?? []
+  const openingItem = items.find((i) => i.role === 'opening')
+  const closingItem = items.find((i) => i.role === 'closing')
+  const openingNum = (openingItem?.index ?? 0) + 1
+  const closingNum = (closingItem?.index ?? count - 1) + 1
+  const strongestNum = 1
+  const weakestNum = count
+  const tips = []
+
+  if (openingNum !== strongestNum) {
+    tips.push(es
+      ? `Usa la imagen ${openingNum} como apertura: abre la serie con más claridad que la ${strongestNum}.`
+      : ja
+        ? `画像${openingNum}を冒頭に。${strongestNum}よりシリーズの入口として機能します。`
+        : `Use image ${openingNum} as your opening — it introduces the series more clearly than image ${strongestNum}.`)
+  } else {
+    tips.push(es
+      ? `La imagen ${strongestNum} funciona bien como apertura: es la más fuerte del conjunto.`
+      : ja
+        ? `最も強い画像${strongestNum}を冒頭に使うのが自然です。`
+        : `Image ${strongestNum} works well as your opening — it is the strongest in the set.`)
+  }
+
+  if (context.hasVisualContrast || context.consistencyLevel === 'baja') {
+    tips.push(es
+      ? 'Evita publicar juntas imágenes con tonos demasiado diferentes — alterna las más editoriales con las más cotidianas.'
+      : ja
+        ? 'トーン差の大きい写真は連続投稿を避け、エディトリアルと日常を分けて見せてください。'
+        : 'Avoid posting images with very different tones back-to-back — separate editorial frames from everyday ones.')
+  }
+
+  if (closingNum !== openingNum && closingNum !== strongestNum) {
+    tips.push(es
+      ? `La imagen ${closingNum} funciona mejor como cierre que como primera foto.`
+      : ja
+        ? `画像${closingNum}は最初より締めくくり向きです。`
+        : `Image ${closingNum} works better as a closing frame than as your first photo.`)
+  }
+
+  if (context.hasMixedSubjects || context.seriesType === 'archivo personal') {
+    if (tips.length < 3) {
+      tips.push(es
+        ? 'Si quieres una serie más editorial, elimina la imagen más cotidiana.'
+        : ja
+          ? 'よりエディトリアルにしたいなら、最も日常的な1枚を外してください。'
+          : 'For a more editorial series, drop the most everyday image.')
+    }
+    if (tips.length < 3) {
+      tips.push(es
+        ? 'Si quieres una serie más personal, conserva el contraste entre registros.'
+        : ja
+          ? 'より個人的なトーンなら、レジスターの対比は残してください。'
+          : 'For a more personal series, keep the contrast between registers.')
+    }
+  }
+
+  if (tips.length < 2) {
+    tips.push(es
+      ? 'Revisa que apertura y cierre cuenten la misma historia antes de publicar.'
+      : ja
+        ? '公開前に、冒頭と締めが同じストーリーを語っているか確認してください。'
+        : 'Before posting, confirm opening and closing tell the same story.')
+  }
+
+  return tips.slice(0, 3)
+}
+
 export function getConsistencyWarning(context, lang = 'es') {
   if (context?.consistencyLevel !== 'baja') return null
 

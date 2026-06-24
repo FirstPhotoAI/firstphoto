@@ -38,17 +38,11 @@ export default function Layout({ children }) {
           </Link>
 
           <nav className="flex items-center gap-7">
-            <NavLink to="/archive" className={navClass} end>
-              {T.archive}
+            <NavLink to="/upload" className={navClass} end>
+              {T.study}
             </NavLink>
             <NavLink to="/creator" className={navClass}>
               {T.creator}
-            </NavLink>
-            <NavLink to="/identities" className={navClass}>
-              {T.identities}
-            </NavLink>
-            <NavLink to="/upload" className={navClass} end>
-              {T.study}
             </NavLink>
 
             {/* Language toggle — ES / EN / JA */}

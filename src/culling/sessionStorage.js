@@ -12,8 +12,11 @@ export function saveCullSession(payload) {
 export function loadCullSession() {
   try {
     const raw = sessionStorage.getItem(KEY)
-    return raw ? JSON.parse(raw) : null
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : null
   } catch {
+    sessionStorage.removeItem(KEY)
     return null
   }
 }

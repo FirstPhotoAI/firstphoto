@@ -2,7 +2,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import Layout from '../components/Layout'
 import ResultsDashboard from '../components/ResultsDashboard'
-import PublishSection from '../components/PublishSection'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
 import { loadStudyResults, normalizeStudy } from '../utils/resultsStorage'
@@ -87,8 +86,6 @@ export default function ResultsPage() {
         </div>
 
         <ResultsDashboard ranked={ranked} portfolio={portfolio} photos={photos} />
-
-        <PublishSection ranked={ranked} portfolio={portfolio} photos={photos} />
 
       </div>
     </Layout>

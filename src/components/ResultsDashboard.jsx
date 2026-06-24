@@ -4,7 +4,7 @@ import { translations } from '../i18n'
 import { SeriesPhotoGrid } from './SeriesPhotoStrip'
 import { getSeriesPreviews } from '../utils/photoSeries'
 import { logSeries } from '../utils/debugSeries'
-import { analyzeSeriesContext, getConsistencyWarning } from '../utils/seriesAnalysis'
+import { analyzeSeriesContext, getConsistencyWarning, buildBeforePublishingAdvice } from '../utils/seriesAnalysis'
 
 // ─── Vote helpers (localStorage) ──────────────────────────────────────────────
 
@@ -170,16 +170,23 @@ function SummaryView({ ranked, portfolio, photos, T, lang }) {
   const allPhotos  = getSeriesPreviews(photos, ranked)
   const context    = portfolio?.series_context ?? analyzeSeriesContext(ranked)
   const warning    = getConsistencyWarning(context, lang)
+  const beforeTips = buildBeforePublishingAdvice(ranked, portfolio, sequence, lang)
+  const strongest  = ranked[0]
+  const weakest    = ranked[ranked.length - 1]
 
   const roleLabel  = (role) => T[ROLE_LABEL_KEY[role]] ?? role
   const countLabel = T.series_count.replace('{n}', allPhotos.length)
+  const photoNum   = (photo) => {
+    const idx = ranked.findIndex((r) => r.id === photo?.id)
+    return idx >= 0 ? idx + 1 : null
+  }
 
   return (
     <section className="py-12">
 
-      {/* Your Visual Series — all uploaded photographs together */}
+      {/* Your Visual Series */}
       <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
-        {T.series_label}
+        {T.series_grid_label}
       </p>
       <p className="mt-2 max-w-lg text-sm leading-relaxed text-[rgba(15,15,15,0.48)]">
         {T.series_intro}
@@ -190,9 +197,32 @@ function SummaryView({ ranked, portfolio, photos, T, lang }) {
 
       <SeriesPhotoGrid
         photos={allPhotos}
-        alt={T.series_label}
+        alt={T.series_grid_label}
         className="mt-6"
       />
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        {strongest?.preview && (
+          <div className="border border-[rgba(15,15,15,0.10)] p-4">
+            <p className="text-[9px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.40)]">
+              {T.strongest_label}
+            </p>
+            <p className="mt-2 text-[13px] leading-relaxed text-[rgba(15,15,15,0.62)]">
+              {T.strongest_body.replace('{n}', String(photoNum(strongest) ?? 1))}
+            </p>
+          </div>
+        )}
+        {weakest?.preview && ranked.length > 1 && (
+          <div className="border border-[rgba(15,15,15,0.10)] p-4">
+            <p className="text-[9px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.40)]">
+              {T.weakest_label}
+            </p>
+            <p className="mt-2 text-[13px] leading-relaxed text-[rgba(15,15,15,0.62)]">
+              {T.weakest_body.replace('{n}', String(photoNum(weakest) ?? ranked.length))}
+            </p>
+          </div>
+        )}
+      </div>
 
       {warning && (
         <p className="mt-5 max-w-lg border-l border-[rgba(15,15,15,0.18)] pl-4 text-[12px] leading-relaxed text-[rgba(15,15,15,0.52)]">
@@ -202,7 +232,7 @@ function SummaryView({ ranked, portfolio, photos, T, lang }) {
 
       <div className="my-10 border-t border-[rgba(15,15,15,0.10)]" />
 
-      {/* Suggested Sequence */}
+      {/* Recommended order */}
       <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
         {T.sequence_label}
       </p>
@@ -216,6 +246,7 @@ function SummaryView({ ranked, portfolio, photos, T, lang }) {
             ?? photos?.[seqIdx]
             ?? ranked[item.index]
           if (!photo?.preview) return null
+          const num = photoNum(photo) ?? seqIdx + 1
           return (
             <div
               key={photo.id ?? seqIdx}
@@ -233,7 +264,7 @@ function SummaryView({ ranked, portfolio, photos, T, lang }) {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[9px] uppercase tracking-[0.20em] text-[rgba(15,15,15,0.40)]">
-                  {roleLabel(item.role)}
+                  {roleLabel(item.role)} · {T.photo_n.replace('{n}', num)}
                 </p>
                 <p className="mt-2 text-[13px] leading-relaxed text-[rgba(15,15,15,0.68)]">
                   {item.reason}
@@ -248,7 +279,7 @@ function SummaryView({ ranked, portfolio, photos, T, lang }) {
 
       {/* Series Observation */}
       <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
-        {T.series_label}
+        {T.observation_label}
       </p>
 
       <div className="mt-6 grid gap-6 sm:grid-cols-2">
@@ -271,7 +302,6 @@ function SummaryView({ ranked, portfolio, photos, T, lang }) {
         ))}
       </div>
 
-      {/* Visual identity — secondary */}
       {identity && (
         <div className="mt-10 border-t border-[rgba(15,15,15,0.08)] pt-8">
           <p className="text-[9px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.32)]">
@@ -281,6 +311,26 @@ function SummaryView({ ranked, portfolio, photos, T, lang }) {
             {identity}
           </p>
         </div>
+      )}
+
+      {beforeTips.length > 0 && (
+        <>
+          <div className="my-10 border-t border-[rgba(15,15,15,0.10)]" />
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
+            {T.before_publish_label}
+          </p>
+          <p className="mt-2 max-w-lg text-sm leading-relaxed text-[rgba(15,15,15,0.48)]">
+            {T.before_publish_intro}
+          </p>
+          <ul className="mt-6 space-y-3">
+            {beforeTips.map((tip) => (
+              <li key={tip} className="flex gap-3 text-[13px] leading-relaxed text-[rgba(15,15,15,0.62)]">
+                <span className="shrink-0 text-[rgba(15,15,15,0.28)]">—</span>
+                {tip}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
     </section>
@@ -387,11 +437,7 @@ function FullAnalysis({ ranked, portfolio, T }) {
           </ul>
         </div>
 
-        {/* Voting */}
-        <div className="mt-8 border-t border-[rgba(15,15,15,0.08)] pt-7">
-          <VotingPanel photoId={top.id} label={T.community} reactions={T.reactions} />
-        </div>
-
+        {/* Voting removed — Play is private; no public gallery participation */}
         {/* Keywords */}
         <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1">
           {editorial.keywords.map((k) => (

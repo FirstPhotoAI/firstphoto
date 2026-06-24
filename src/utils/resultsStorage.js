@@ -121,10 +121,10 @@ export function saveStudyResults(ranked, portfolio) {
 }
 
 export function loadStudyResults() {
-  const raw = sessionStorage.getItem(STORAGE_KEY)
-  if (!raw) return null
-
   try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+
     const parsed = JSON.parse(raw)
 
     if (Array.isArray(parsed)) {
@@ -133,6 +133,7 @@ export function loadStudyResults() {
 
     return normalizeStudy(parsed)
   } catch {
+    sessionStorage.removeItem(STORAGE_KEY)
     return null
   }
 }
