@@ -1001,6 +1001,243 @@ function buildFutureExploration(n, portfolioStyle, lang) {
   return SUGGESTIONS[portfolioStyle] || SUGGESTIONS.natural
 }
 
+function atmosphereScore(scores) {
+  return (
+    scores.contrast.score    * 0.35 +
+    scores.saturation.score  * 0.35 +
+    scores.composition.score * 0.30
+  )
+}
+
+function buildSequenceReason(n, role, style, lang) {
+  const es = lang === 'es'
+  const ja = lang === 'ja'
+
+  const OPENING = es ? {
+    cinematic:  'Establece el tono atmosférico de la serie. Su peso visual prepara al espectador para el estado de ánimo que siguen las demás imágenes.',
+    minimalist: 'Abre con contención y claridad. Menos información al inicio deja espacio para que el resto de la serie respire.',
+    film:       'Introduce la serie con una cualidad de memoria y tiempo. El tono suave orienta la lectura hacia la atmósfera más que hacia el detalle.',
+    vibrant:    'Entra con energía visual inmediata. El color y la luminosidad definen el tono emocional antes de que las otras imágenes amplíen la historia.',
+    editorial:  'Presenta la serie con intención compositiva clara. El encuadre guía al espectador desde la primera imagen.',
+    natural:    'Abre con una lectura honesta y directa. La luz natural y la composición abierta invitan a entrar en la serie sin artificio.',
+  } : ja ? {
+    cinematic:  'シリーズの空気感を最初に示す一枚。視覚的な重みが、続く写真の読み方を整えます。',
+    minimalist: '余白と抑制で始まる。冒頭の静けさが、後続の写真の呼吸を作ります。',
+    film:       '記憶や時間の質感で始まる。柔らかなトーンが、細部よりも雰囲気を先に伝えます。',
+    vibrant:    '色と明るさで即座に感情を示す。シリーズ全体の温度を最初に決めます。',
+    editorial:  '構図の意図がはっきりした入口。最初の一枚が視線の動きを導きます。',
+    natural:    '自然光と素直な構図で始まる。飾らない入り口がシリーズへの扉になります。',
+  } : {
+    cinematic:  'Sets the atmospheric tone of the series. Its visual weight prepares the viewer for the mood the other images follow.',
+    minimalist: 'Opens with restraint and clarity. Less information at the start leaves room for the rest of the series to breathe.',
+    film:       'Introduces the series with a quality of memory and time. The soft tone orients reading toward atmosphere over detail.',
+    vibrant:    'Enters with immediate visual energy. Color and brightness define the emotional temperature before the other images expand the story.',
+    editorial:  'Presents the series with clear compositional intention. The framing guides the viewer from the first image.',
+    natural:    'Opens with an honest, direct read. Natural light and open composition invite entry without artifice.',
+  }
+
+  const SUPPORTING = es ? {
+    cinematic:  'Mantiene la tensión visual entre apertura y cierre. Refuerza el tono sin repetir el mismo gesto.',
+    minimalist: 'Sostiene el ritmo con quietud. Actúa como pausa entre la entrada y la conclusión.',
+    film:       'Profundiza la atmósfera sin cerrar la historia. Conecta los tonos entre la primera y la última imagen.',
+    vibrant:    'Amplía la paleta emocional. Aporta variación sin romper la coherencia del conjunto.',
+    editorial:  'Desarrolla la estructura visual de la serie. Cada encuadre añade una capa al argumento fotográfico.',
+    natural:    'Continúa la observación con la misma calma. Une las imágenes a través de la luz y el espacio.',
+  } : ja ? {
+    cinematic:  '冒頭と余韻の間に視覚的な緊張を保つ。同じ動きの反復ではなく、トーンを重ねます。',
+    minimalist: '静けさでリズムを支える。入口と結びの間にある呼吸になります。',
+    film:       '物語を閉じずに空気感を深める。最初と最後の写真をつなぎます。',
+    vibrant:    '感情の幅を広げる。シリーズの統一感を保ちながら変化を加えます。',
+    editorial:  '視覚的な構造を展開する。各フレームが写真の論点を一段深めます。',
+    natural:    '同じ静かな観察を続ける。光と空間で前後の写真を結びます。',
+  } : {
+    cinematic:  'Holds visual tension between opening and closing. Reinforces tone without repeating the same gesture.',
+    minimalist: 'Sustains rhythm through quiet. Acts as a pause between entry and conclusion.',
+    film:       'Deepens atmosphere without closing the story. Connects tones between the first and last images.',
+    vibrant:    'Expands the emotional palette. Adds variation without breaking the set\'s coherence.',
+    editorial:  'Develops the series\' visual structure. Each frame adds a layer to the photographic argument.',
+    natural:    'Continues observation with the same calm. Links images through light and space.',
+  }
+
+  const CLOSING = es ? {
+    cinematic:  'Cierra con presencia y peso. La imagen deja una impresión que permanece después de ver la serie completa.',
+    minimalist: 'Concluye con la misma contención del inicio. El cierre es silencioso pero memorable.',
+    film:       'Termina con una sensación de tiempo detenido. La atmósfera queda suspendida en la memoria del espectador.',
+    vibrant:    'Cierra con la mayor intensidad emocional del conjunto. El color y la luz sellan la lectura de la serie.',
+    editorial:  'Concluye con la composición más resuelta. El último encuadre completa el arco visual de la serie.',
+    natural:    'Cierra con una lectura serena y definitiva. La luz natural deja la serie en un punto de reposo.',
+  } : ja ? {
+    cinematic:  '存在感で締めくくる。シリーズ全体を見終えたあとも残る印象を残します。',
+    minimalist: '冒頭と同じ抑制で終わる。静かだが記憶に残る結びです。',
+    film:       '時間が止まった感覚で終わる。空気感が見終わった後も漂います。',
+    vibrant:    '最も感情の強い一枚で締める。色と光がシリーズの読みを確定します。',
+    editorial:  '最も整った構図で終わる。最後のフレームが視覚的な弧を完成させます。',
+    natural:    '穏やかで確かな読みで終える。自然光がシリーズを静かな余韻で閉じます。',
+  } : {
+    cinematic:  'Closes with presence and weight. The image leaves an impression that stays after viewing the full series.',
+    minimalist: 'Concludes with the same restraint as the opening. The ending is quiet but memorable.',
+    film:       'Ends with a sense of stopped time. Atmosphere remains suspended in the viewer\'s memory.',
+    vibrant:    'Closes with the set\'s strongest emotional intensity. Color and light seal the series reading.',
+    editorial:  'Concludes with the most resolved composition. The final frame completes the visual arc.',
+    natural:    'Closes with a calm, definitive read. Natural light leaves the series at a point of rest.',
+  }
+
+  const pool = role === 'opening' ? OPENING : role === 'closing' ? CLOSING : SUPPORTING
+  return pool[style] || pool.natural
+}
+
+/**
+ * Recommend a display order: opening → supporting → closing.
+ * Returns items with indices into the rankedPhotos array.
+ */
+function buildSuggestedSequence(n, rankedPhotos, lang = 'es') {
+  if (!rankedPhotos?.length) return { order: [], items: [] }
+
+  if (rankedPhotos.length === 1) {
+    const style = detectStyle(rankedPhotos[0].analysis.scores)
+    return {
+      order: [0],
+      items: [{ index: 0, role: 'opening', reason: buildSequenceReason(n, 'opening', style, lang) }],
+    }
+  }
+
+  const scored = rankedPhotos.map((photo, index) => ({
+    index,
+    photo,
+    pScore: portfolioSelectionScore(photo.analysis.scores),
+    atmScore: atmosphereScore(photo.analysis.scores),
+  }))
+
+  scored.sort((a, b) => b.pScore - a.pScore)
+  const opener = scored[0]
+  const rest   = scored.slice(1)
+
+  rest.sort((a, b) => b.atmScore - a.atmScore)
+  const closer = rest[0]
+  const middle = rest.slice(1).sort((a, b) => b.pScore - a.pScore)
+
+  const ordered = [opener, ...middle, closer]
+
+  const items = ordered.map((slot, seqIdx) => {
+    const role = seqIdx === 0
+      ? 'opening'
+      : seqIdx === ordered.length - 1
+        ? 'closing'
+        : 'supporting'
+    const style = detectStyle(slot.photo.analysis.scores)
+    return {
+      index:  slot.index,
+      role,
+      reason: buildSequenceReason(n, role, style, lang),
+    }
+  })
+
+  return { order: items.map((i) => i.index), items }
+}
+
+function buildSeriesObservation(n, rankedPhotos, portfolioStyle, lang = 'es') {
+  const es = lang === 'es'
+  const ja = lang === 'ja'
+  const count = rankedPhotos.length
+
+  const totals = rankedPhotos.map((p) => p.analysis.scores.total)
+  const avgTotal = totals.reduce((s, v) => s + v, 0) / count
+  const spread   = Math.max(...totals) - Math.min(...totals)
+
+  const avgBr = rankedPhotos.reduce((s, p) => s + p.analysis.scores.brightness.raw,  0) / count
+  const avgCr = rankedPhotos.reduce((s, p) => s + p.analysis.scores.contrast.raw,    0) / count
+  const avgSat = rankedPhotos.reduce((s, p) => s + p.analysis.scores.saturation.raw, 0) / count
+
+  const archetypes = [...new Set(rankedPhotos.map((p) => p.analysis.editorial.archetype).filter(Boolean))]
+
+  const MOOD = es ? {
+    dark:     'El conjunto se inclina hacia tonos contenidos y una atmósfera reflexiva. Las imágenes comparten un estado de ánimo más introspectivo que celebratorio.',
+    bright:   'La serie respira luminosidad. Hay apertura visual y una sensación de claridad que atraviesa las fotografías como un hilo común.',
+    muted:    'El estado de ánimo es contenido y uniforme. Las imágenes hablan en un registro visual bajo, coherente y deliberado.',
+    vibrant:  'La energía emocional es visible en todo el conjunto. Color y luz trabajan juntos para crear una serie con temperatura alta.',
+    balanced: 'El tono emocional se mantiene equilibrado entre las imágenes. Ni demasiado sombrío ni demasiado efusivo — una lectura moderada y consistente.',
+  } : ja ? {
+    dark:     '全体は抑えたトーンと内省的な空気感に傾いています。祝祭的というより、静かに見つめる系列です。',
+    bright:   '明るさがシリーズを貫いています。開放的な視覚感覚が共通の糸になっています。',
+    muted:    'ムードは控えめで統一されています。低い視覚的レジスターで、意図的に語りかけます。',
+    vibrant:  '感情の温度が高い系列です。色と光が一体となってエネルギーを作っています。',
+    balanced: '感情のトーンは中庸で安定しています。暗すぎず、派手すぎない一貫した読みです。',
+  } : {
+    dark:     'The set leans toward contained tones and a reflective atmosphere. The images share a more introspective than celebratory mood.',
+    bright:   'The series breathes luminosity. Visual openness and clarity run through the photographs as a common thread.',
+    muted:    'The mood is restrained and even. The images speak in a low, coherent, deliberate visual register.',
+    vibrant:  'Emotional energy is visible across the set. Color and light work together to create a series with high temperature.',
+    balanced: 'The emotional tone stays balanced across images. Neither too somber nor too effusive — a moderate, consistent read.',
+  }
+
+  let moodKey = 'balanced'
+  if      (avgBr < 95 && avgCr > 38) moodKey = 'dark'
+  else if (avgBr > 145)              moodKey = 'bright'
+  else if (avgSat > 0.55)            moodKey = 'vibrant'
+  else if (avgSat < 0.18)            moodKey = 'muted'
+
+  const RHYTHM = es ? {
+    even:    'Las imágenes mantienen un ritmo parejo. Ninguna rompe bruscamente con las demás — la serie se lee como una secuencia continua.',
+    varied:  'Hay contraste de intensidad entre las fotografías. Esa variación crea un ritmo visual: momentos de calma alternados con mayor peso.',
+    dynamic: 'El ritmo es claramente dinámico. Cada imagen aporta un cambio de energía que mantiene la atención a lo largo de la serie.',
+  } : ja ? {
+    even:    '各写真の強度はおおむね揃っています。系列は途切れず、一続きの流れとして読めます。',
+    varied:  '写真ごとに強度の差があります。静と動の交替が、視覚的なリズムを生んでいます。',
+    dynamic: 'リズムは明確にダイナミックです。各枚がエネルギーの変化を加え、注意を保ちます。',
+  } : {
+    even:    'The images maintain an even rhythm. None breaks sharply from the others — the series reads as a continuous sequence.',
+    varied:  'There is contrast in intensity between photographs. That variation creates visual rhythm: moments of calm alternating with greater weight.',
+    dynamic: 'The rhythm is clearly dynamic. Each image adds a shift in energy that holds attention across the series.',
+  }
+
+  let rhythmKey = 'even'
+  if      (spread > 22) rhythmKey = 'dynamic'
+  else if (spread > 12) rhythmKey = 'varied'
+
+  const CONSISTENCY = es ? {
+    tight:   'Las decisiones visuales se repiten con coherencia: tono, contraste y composición hablan el mismo idioma en todas las imágenes.',
+    mixed:   'Hay una base visual compartida, con variaciones deliberadas. La serie se siente unificada pero no repetitiva.',
+    diverse: 'Las imágenes exploran registros visuales distintos. La coherencia está en la intención, no en la repetición formal.',
+  } : ja ? {
+    tight:   'トーン、コントラスト、構図が一貫しています。視覚的な言語が系列全体で揃っています。',
+    mixed:   '共通の基盤の上に、意図的な変化があります。統一感がありながら、単調ではありません。',
+    diverse: '各写真は異なる視覚的レジスターを探ります。一致しているのは形式より意図です。',
+  } : {
+    tight:   'Visual decisions repeat with coherence: tone, contrast, and composition speak the same language across all images.',
+    mixed:   'There is a shared visual foundation with deliberate variation. The series feels unified but not repetitive.',
+    diverse: 'The images explore distinct visual registers. Coherence lives in intention, not formal repetition.',
+  }
+
+  let consistencyKey = 'mixed'
+  if      (avgSat < 0.20 || portfolioStyle === 'minimalist') consistencyKey = 'tight'
+  else if (archetypes.length >= Math.min(count, 3))          consistencyKey = 'diverse'
+
+  const NARRATIVE = es ? {
+    unified:  'Las fotografías cuentan una historia coherente. El espectador puede seguir un hilo emocional de principio a fin.',
+    layered:  'La narrativa se construye en capas. Cada imagen añade una perspectiva distinta sobre el mismo territorio visual.',
+    open:     'La serie deja preguntas abiertas. Las imágenes se relacionan por atmósfera más que por argumento lineal — y eso es intencional.',
+  } : ja ? {
+    unified:  '写真は一つの物語として読めます。感情の糸を最初から最後まで辿れます。',
+    layered:  '物語は層を重ねて構築されます。各枚が同じ視覚的領域の異なる面を見せます。',
+    open:     '系列は問いを開いたままにします。直線的な論理より空気感で結ばれています。',
+  } : {
+    unified:  'The photographs tell a coherent story. The viewer can follow an emotional thread from start to finish.',
+    layered:  'The narrative builds in layers. Each image adds a different perspective on the same visual territory.',
+    open:     'The series leaves questions open. The images relate through atmosphere more than linear argument — and that is intentional.',
+  }
+
+  let narrativeKey = 'layered'
+  if      (archetypes.length <= 1) narrativeKey = 'unified'
+  else if (archetypes.length >= count - 1) narrativeKey = 'open'
+
+  return {
+    mood:         MOOD[moodKey],
+    rhythm:       RHYTHM[rhythmKey],
+    consistency:  CONSISTENCY[consistencyKey],
+    narrative:    NARRATIVE[narrativeKey],
+  }
+}
+
 /**
  * Build a cross-portfolio comparative analysis.
  * Called after all photos are individually analyzed and ranked.
@@ -1048,6 +1285,8 @@ function buildPortfolioFeedback(rankedPhotos, lang = 'es') {
     })),
     what_makes_the_winner_stronger: buildWhatMakesWinnerStronger(n, winnerScores, otherScores, lang),
     future_exploration:             buildFutureExploration(n, portfolioStyle, lang),
+    suggested_sequence:             buildSuggestedSequence(n, rankedPhotos, lang),
+    series_observation:             buildSeriesObservation(n, rankedPhotos, portfolioStyle, lang),
   }
 }
 

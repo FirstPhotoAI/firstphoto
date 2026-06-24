@@ -107,57 +107,127 @@ function DimTable({ scores, dimLabels }) {
   )
 }
 
-// ─── SummaryView — always visible ─────────────────────────────────────────────
+// ─── Sequence + series helpers ────────────────────────────────────────────────
+
+const ROLE_LABEL_KEY = {
+  opening:    'sequence_opening',
+  supporting: 'sequence_supporting',
+  closing:    'sequence_closing',
+}
+
+function resolveSequence(ranked, portfolio) {
+  if (portfolio?.suggested_sequence?.items?.length) {
+    return portfolio.suggested_sequence
+  }
+  const items = ranked.map((photo, i) => ({
+    index:  i,
+    role:   i === 0 ? 'opening' : i === ranked.length - 1 ? 'closing' : 'supporting',
+    reason: photo.analysis.editorial.firstImpression ?? '',
+  }))
+  return { order: ranked.map((_, i) => i), items }
+}
+
+function resolveSeriesObservation(portfolio, ranked) {
+  if (portfolio?.series_observation) return portfolio.series_observation
+  const top = ranked[0]?.analysis?.editorial
+  return {
+    mood:        top?.firstImpression ?? '',
+    rhythm:      portfolio?.what_makes_the_winner_stronger?.[0] ?? '',
+    consistency: portfolio?.what_makes_the_winner_stronger?.[1] ?? '',
+    narrative:   portfolio?.selection_reason ?? top?.curatorReview ?? '',
+  }
+}
+
+// ─── SummaryView — sequence-first, identity secondary ─────────────────────────
 
 function SummaryView({ ranked, portfolio, T }) {
-  const top      = ranked[0]
-  const identity = portfolio?.visual_identity ?? top.analysis.editorial.archetype
-  const insights = portfolio?.what_makes_the_winner_stronger
-    ?? top.analysis.editorial.creativeHighlights
+  const sequence = resolveSequence(ranked, portfolio)
+  const series   = resolveSeriesObservation(portfolio, ranked)
+  const identity = portfolio?.visual_identity ?? ranked[0]?.analysis?.editorial?.archetype ?? ''
+
+  const roleLabel = (role) => T[ROLE_LABEL_KEY[role]] ?? role
 
   return (
     <section className="py-12">
 
-      {/* Visual Identity */}
-      <p className="font-display text-3xl font-light text-[#0f0f0f]">
-        {T.portfolio_identity}
+      {/* Suggested Sequence */}
+      <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
+        {T.sequence_label}
       </p>
-      <p className="mt-2 text-[15px] text-[rgba(15,15,15,0.50)]">
-        {identity}
+      <p className="mt-2 max-w-lg text-sm leading-relaxed text-[rgba(15,15,15,0.48)]">
+        {T.sequence_intro}
       </p>
 
-      <div className="my-8 border-t border-[rgba(15,15,15,0.10)]" />
-
-      {/* Featured Photo + Key Insights */}
-      <div className="flex gap-8 sm:gap-12">
-
-        {/* Thumbnail */}
-        <div className="shrink-0">
-          <div className="w-28 border border-[rgba(15,15,15,0.12)] sm:w-36">
-            <img
-              src={top.preview}
-              alt={T.featured_photo}
-              className="aspect-[3/4] w-full object-cover"
-            />
-          </div>
-        </div>
-
-        {/* Key Insights */}
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.36)]">
-            {T.key_insights}
-          </p>
-          <ul className="mt-4 space-y-3">
-            {insights.slice(0, 3).map((item, i) => (
-              <li key={i} className="flex gap-3 text-[13px] leading-relaxed text-[rgba(15,15,15,0.68)]">
-                <span className="shrink-0 text-[rgba(15,15,15,0.28)]">•</span>
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-
+      <div className="mt-8 space-y-6">
+        {sequence.items.map((item, seqIdx) => {
+          const photo = ranked[item.index]
+          if (!photo) return null
+          return (
+            <div
+              key={photo.id}
+              className="flex gap-4 border-b border-[rgba(15,15,15,0.07)] pb-6 last:border-0 last:pb-0 sm:gap-6"
+            >
+              <span className="w-6 shrink-0 pt-1 font-display text-sm text-[rgba(15,15,15,0.22)]">
+                {String(seqIdx + 1).padStart(2, '0')}
+              </span>
+              <div className="w-20 shrink-0 border border-[rgba(15,15,15,0.10)] sm:w-24">
+                <img
+                  src={photo.preview}
+                  alt={roleLabel(item.role)}
+                  className="aspect-[3/4] w-full object-cover"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] uppercase tracking-[0.20em] text-[rgba(15,15,15,0.40)]">
+                  {roleLabel(item.role)}
+                </p>
+                <p className="mt-2 text-[13px] leading-relaxed text-[rgba(15,15,15,0.68)]">
+                  {item.reason}
+                </p>
+              </div>
+            </div>
+          )
+        })}
       </div>
+
+      <div className="my-10 border-t border-[rgba(15,15,15,0.10)]" />
+
+      {/* Series Observation */}
+      <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
+        {T.series_label}
+      </p>
+
+      <div className="mt-6 grid gap-6 sm:grid-cols-2">
+        {[
+          { label: T.series_mood,        text: series.mood },
+          { label: T.series_rhythm,      text: series.rhythm },
+          { label: T.series_consistency, text: series.consistency },
+          { label: T.series_narrative,   text: series.narrative },
+        ].map(({ label, text }) => (
+          text ? (
+            <div key={label}>
+              <p className="text-[9px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.36)]">
+                {label}
+              </p>
+              <p className="mt-2 text-[13px] leading-relaxed text-[rgba(15,15,15,0.62)]">
+                {text}
+              </p>
+            </div>
+          ) : null
+        ))}
+      </div>
+
+      {/* Visual identity — secondary */}
+      {identity && (
+        <div className="mt-10 border-t border-[rgba(15,15,15,0.08)] pt-8">
+          <p className="text-[9px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.32)]">
+            {T.identity_secondary}
+          </p>
+          <p className="mt-2 text-sm text-[rgba(15,15,15,0.45)]">
+            {identity}
+          </p>
+        </div>
+      )}
 
     </section>
   )
