@@ -1,6 +1,7 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
+import MobileUploadCta, { isStickyUploadVisible } from './MobileUploadCta'
 
 const NAV_BASE     = 'text-[10px] uppercase tracking-[0.16em] transition-colors'
 const NAV_ACTIVE   = 'text-[#0f0f0f]'
@@ -13,6 +14,8 @@ function navClass({ isActive }) {
 export default function Layout({ children }) {
   const { lang, setLang } = useLang()
   const T = translations[lang].nav
+  const { pathname } = useLocation()
+  const stickyUpload = isStickyUploadVisible(pathname)
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
@@ -71,7 +74,8 @@ export default function Layout({ children }) {
 
         </div>
       </header>
-      <main>{children}</main>
+      <main className={stickyUpload ? 'pb-24 md:pb-0' : undefined}>{children}</main>
+      <MobileUploadCta />
     </div>
   )
 }

@@ -168,6 +168,19 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
+
+        {/* Participate — early, clear upload path */}
+        <div className="mt-10 border-t border-[rgba(15,15,15,0.10)] pt-8">
+          <p className="font-display text-lg font-light text-[#0f0f0f] md:text-xl">
+            {T.participate_prompt}
+          </p>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-[rgba(15,15,15,0.52)]">
+            {T.participate_body}
+          </p>
+          <div className="mt-5">
+            <Link to="/upload" className="btn-primary">{T.participate_btn}</Link>
+          </div>
+        </div>
       </section>
 
       <div className="border-t border-[rgba(15,15,15,0.10)]" />
@@ -298,7 +311,7 @@ export default function LandingPage() {
           {T.share_description}
         </p>
         <div className="mt-8">
-          <Link to="/upload" className="btn-primary">{T.cta_study}</Link>
+          <Link to="/upload" className="btn-primary">{T.participate_btn}</Link>
         </div>
       </section>
 

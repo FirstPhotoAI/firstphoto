@@ -84,7 +84,7 @@ export default function UploadPage() {
           {T.h1}
         </h1>
         <p className="mt-3 text-sm text-[rgba(15,15,15,0.52)]">
-          {T.description.replace('{min}', MIN_PHOTOS)}
+          {T.description}
         </p>
 
         <div className="mt-8">
