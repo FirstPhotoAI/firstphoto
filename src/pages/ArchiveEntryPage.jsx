@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
-import { addNote, getEntry, getNotes, getNoteCount } from '../data/archiveStore'
+import { addNote, getEntry, getNotes, getNoteCount, getEntryPhotos } from '../data/archiveStore'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
+import { SeriesPhotoGrid } from '../components/SeriesPhotoStrip'
 
 const MAX_NOTE = 300
 
@@ -204,6 +205,7 @@ export default function ArchiveEntryPage() {
   )
   const noteCount = getNoteCount(entry.id)
   const creator   = entry.creatorName || TG.anonymous
+  const photos    = getEntryPhotos(entry)
 
   return (
     <Layout>
@@ -218,37 +220,37 @@ export default function ArchiveEntryPage() {
           {entry.category}
         </p>
 
-        {/* ── Photograph ──────────────────────────────────────────────────── */}
-        <div className="border border-[rgba(15,15,15,0.10)]">
-          <img
-            src={entry.photo}
-            alt={entry.title || entry.category}
-            className="w-full"
-          />
-        </div>
+        {/* ── Visual series ───────────────────────────────────────────────── */}
+        <SeriesPhotoGrid photos={photos} alt={entry.title || entry.category} />
 
         {/* ── Metadata ────────────────────────────────────────────────────── */}
         <div className="mt-7 border-b border-[rgba(15,15,15,0.10)] pb-7">
 
-          {entry.archetype && (
-            <p className="text-[11px] uppercase tracking-[0.20em] text-[rgba(15,15,15,0.38)]">
-              {entry.archetype}
+          {photos.length > 1 && (
+            <p className="text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.38)]">
+              {TG.series_count.replace('{n}', photos.length)}
+            </p>
+          )}
+
+          {entry.caption && (
+            <p className={`text-[15px] italic leading-[1.8] text-[rgba(15,15,15,0.56)] ${photos.length > 1 ? 'mt-4' : ''}`}>
+              {entry.caption}
             </p>
           )}
 
           {entry.title ? (
-            <h1 className={`font-display text-3xl font-light text-[#0f0f0f] ${entry.archetype ? 'mt-2' : ''}`}>
+            <h1 className="mt-4 font-display text-3xl font-light text-[#0f0f0f]">
               {entry.title}
             </h1>
-          ) : !entry.archetype && (
+          ) : !entry.caption && (
             <h1 className="font-display text-3xl font-light text-[rgba(15,15,15,0.30)]">
               {T.untitled}
             </h1>
           )}
 
-          {entry.caption && (
-            <p className="mt-4 text-[15px] italic leading-[1.8] text-[rgba(15,15,15,0.56)]">
-              {entry.caption}
+          {entry.archetype && (
+            <p className="mt-4 text-[9px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.28)]">
+              {entry.archetype}
             </p>
           )}
 

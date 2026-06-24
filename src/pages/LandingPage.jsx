@@ -11,6 +11,7 @@ import {
   getHomepageRecentWorks,
 } from '../data/archiveStore'
 import { IDENTITIES } from '../data/identities'
+import SeriesPhotoStrip from '../components/SeriesPhotoStrip'
 
 // ─── Plans table ──────────────────────────────────────────────────────────────
 
@@ -134,13 +135,10 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3">
             {recentEntries.map((entry) => (
               <Link key={entry.id} to={`/archive/${entry.id}`} className="group block">
-                <div className="overflow-hidden border border-[rgba(15,15,15,0.10)]">
-                  <img
-                    src={entry.photo}
-                    alt={entry.archetype || entry.category}
-                    className="aspect-[3/4] w-full object-cover transition-opacity duration-300 group-hover:opacity-80"
-                  />
-                </div>
+                <SeriesPhotoStrip
+                  entry={entry}
+                  alt={entry.archetype || entry.category}
+                />
                 {entry.archetype && (
                   <p className="mt-1.5 truncate text-[9px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.38)]">
                     {entry.archetype}

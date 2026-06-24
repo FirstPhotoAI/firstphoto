@@ -5,7 +5,7 @@
  * All data lives in localStorage — no server, no cost.
  *
  * Entry shape:
- *   { id, photo (base64 or /path), title, category, firstImpression,
+ *   { id, photo (cover), photos (array), photoCount, title, category, firstImpression,
  *     observation, archetype, keywords, caption,
  *     creatorName, country, lang, isPublic, isCurated,
  *     publishedAt (ms timestamp) }
@@ -102,18 +102,34 @@ export function getPublicEntries() {
   return getEntries().filter((e) => e.isPublic !== false)
 }
 
+/** Returns all photographs for an entry (series-aware, backward compatible). */
+export function getEntryPhotos(entry) {
+  if (!entry) return []
+  if (Array.isArray(entry.photos) && entry.photos.length > 0) return entry.photos
+  if (entry.photo) return [entry.photo]
+  return []
+}
+
 /**
  * Prepend a new entry. Returns the saved entry with its id.
  */
+export const ARCHIVE_UPDATED_EVENT = 'firstphoto:archive-updated'
+
 export function addEntry({
-  photo, title, category, firstImpression, observation,
+  photo, photos = [], title, category, firstImpression, observation,
   archetype, keywords, caption = '', creatorName = '',
   country = '', lang = 'es',
   isPublic = false, isCurated = false,
 }) {
+  const photoList = photos.length > 0 ? photos : (photo ? [photo] : [])
+  const cover     = photoList[0] ?? photo ?? ''
+  const now       = Date.now()
+
   const entry = {
     id:              crypto.randomUUID(),
-    photo,
+    photo:           cover,
+    photos:          photoList,
+    photoCount:      photoList.length,
     title:           title?.trim()       ?? '',
     category,
     firstImpression,
@@ -126,11 +142,26 @@ export function addEntry({
     lang:            lang                ?? 'es',
     isPublic,
     isCurated,
-    publishedAt:     Date.now(),
+    publishedAt:     now,
+    createdAt:       now,
   }
+
   const entries = getEntries()
   entries.unshift(entry)
-  localStorage.setItem(ARCHIVE_KEY, JSON.stringify(entries))
+
+  try {
+    localStorage.setItem(ARCHIVE_KEY, JSON.stringify(entries))
+  } catch (err) {
+    if (err?.name === 'QuotaExceededError') {
+      throw new Error('QUOTA_EXCEEDED')
+    }
+    throw err
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(ARCHIVE_UPDATED_EVENT, { detail: entry }))
+  }
+
   return entry
 }
 
@@ -255,6 +286,14 @@ export function getRecentEntries(n = 3, days = 30) {
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
   const recent = all.filter((e) => e.publishedAt >= cutoff)
   return (recent.length >= n ? recent : all).slice(0, n)
+}
+
+/** Returns the N newest public community (non-founder) entries. */
+export function getCommunityEntries(n = 9) {
+  return getPublicEntries()
+    .filter((e) => !isFounderEntry(e))
+    .sort((a, b) => b.publishedAt - a.publishedAt)
+    .slice(0, n)
 }
 
 /** Seed/founder content — used only to fill the archive until community submissions grow. */

@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState, useCallback } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import Layout from '../components/Layout'
 import {
   getPublicEntries,
   getCuratorPicks,
   getMostDiscussed,
   getNewest,
+  getCommunityEntries,
   getNoteCount,
   getEntriesByArchetype,
   getEntriesByCategory,
   getArchetypeCounts,
+  getEntryPhotos,
+  ARCHIVE_UPDATED_EVENT,
   CATEGORIES,
   CATEGORIES_EN,
   ARCHETYPES_ES,
@@ -17,11 +20,13 @@ import {
 } from '../data/archiveStore'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
+import SeriesPhotoStrip from '../components/SeriesPhotoStrip'
 
 // ─── Post card ─────────────────────────────────────────────────────────────────
 
 function GalleryCard({ entry, T }) {
   const noteCount  = getNoteCount(entry.id)
+  const photoCount = getEntryPhotos(entry).length
   const notesLabel = noteCount === 0
     ? T.notes_0
     : noteCount === 1
@@ -35,27 +40,29 @@ function GalleryCard({ entry, T }) {
 
   return (
     <Link to={`/archive/${entry.id}`} className="group block">
-      <div className="overflow-hidden border border-[rgba(15,15,15,0.10)]">
-        <img
-          src={entry.photo}
-          alt={entry.title || entry.archetype || entry.category}
-          className="aspect-[3/4] w-full object-cover transition-opacity duration-300 group-hover:opacity-88"
-        />
-      </div>
+      <SeriesPhotoStrip
+        entry={entry}
+        alt={entry.title || entry.archetype || entry.category}
+      />
 
       <div className="mt-3 border-b border-[rgba(15,15,15,0.07)] pb-4">
+        {photoCount > 1 && (
+          <p className="text-[9px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.34)]">
+            {T.series_count.replace('{n}', photoCount)}
+          </p>
+        )}
+        {caption && (
+          <p className={`text-[12px] italic leading-relaxed text-[rgba(15,15,15,0.52)] ${photoCount > 1 ? 'mt-2' : ''}`}>
+            {caption}
+          </p>
+        )}
         {entry.archetype && (
-          <p className="text-[10px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.40)]">
+          <p className="mt-2 text-[9px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.28)]">
             {entry.archetype}
           </p>
         )}
         {entry.title && (
           <p className="mt-1 truncate text-[13px] text-[#0f0f0f]">{entry.title}</p>
-        )}
-        {caption && (
-          <p className="mt-2 text-[12px] italic leading-relaxed text-[rgba(15,15,15,0.52)]">
-            {caption}
-          </p>
         )}
       </div>
 
@@ -84,10 +91,11 @@ function FeaturedCard({ entry, T }) {
       className="group grid grid-cols-1 overflow-hidden border border-[rgba(15,15,15,0.10)] sm:grid-cols-[2fr_3fr]"
     >
       <div className="overflow-hidden">
-        <img
-          src={entry.photo}
+        <SeriesPhotoStrip
+          entry={entry}
           alt={entry.title || entry.archetype || ''}
-          className="h-full min-h-[300px] w-full object-cover transition-opacity duration-300 group-hover:opacity-90 sm:min-h-[440px]"
+          className="h-full min-h-[300px] sm:min-h-[440px] [&_img]:h-full [&_img]:min-h-[300px] [&_img]:sm:min-h-[440px] [&_img]:aspect-auto"
+          hover
         />
       </div>
       <div className="flex flex-col justify-between p-8 sm:p-10">
@@ -97,8 +105,13 @@ function FeaturedCard({ entry, T }) {
               {T.curator_badge}
             </p>
           )}
+          {(entry.caption || entry.observation) && (
+            <p className="text-[14px] italic leading-[1.9] text-[rgba(15,15,15,0.58)]">
+              {entry.caption || entry.observation.slice(0, 200) + (entry.observation.length > 200 ? '…' : '')}
+            </p>
+          )}
           {entry.archetype && (
-            <p className="text-[11px] uppercase tracking-[0.20em] text-[rgba(15,15,15,0.42)]">
+            <p className="mt-4 text-[10px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.30)]">
               {entry.archetype}
             </p>
           )}
@@ -106,11 +119,6 @@ function FeaturedCard({ entry, T }) {
             <h3 className="mt-3 font-display text-2xl font-light text-[#0f0f0f] sm:text-3xl">
               {entry.title}
             </h3>
-          )}
-          {(entry.caption || entry.observation) && (
-            <p className="mt-5 text-[14px] italic leading-[1.9] text-[rgba(15,15,15,0.58)]">
-              {entry.caption || entry.observation.slice(0, 200) + (entry.observation.length > 200 ? '…' : '')}
-            </p>
           )}
         </div>
         <div className="mt-8 flex items-end justify-between">
@@ -170,19 +178,33 @@ export default function ArchivePage() {
   const T          = translations[lang].gallery
   const categories = lang === 'es' ? CATEGORIES : CATEGORIES_EN
   const archetypes = lang === 'es' ? ARCHETYPES_ES : ARCHETYPES_EN
+  const location   = useLocation()
 
   const [allEntries,    setAllEntries]    = useState([])
   const [activeFilter,  setActiveFilter]  = useState(null)
   const [activeIdentity, setActiveIdentity] = useState(null)
 
-  useEffect(() => {
+  const refreshEntries = useCallback(() => {
     setAllEntries(getPublicEntries())
   }, [])
 
+  useEffect(() => {
+    refreshEntries()
+    window.addEventListener(ARCHIVE_UPDATED_EVENT, refreshEntries)
+    window.addEventListener('focus', refreshEntries)
+    return () => {
+      window.removeEventListener(ARCHIVE_UPDATED_EVENT, refreshEntries)
+      window.removeEventListener('focus', refreshEntries)
+    }
+  }, [refreshEntries])
+
+  useEffect(() => {
+    refreshEntries()
+  }, [location.pathname, refreshEntries])
+
   // ── Derived data ────────────────────────────────────────────────────────────
   const curatorPicks    = getCuratorPicks(6)
-  const featuredStory   = curatorPicks[0] ?? getMostDiscussed(1)[0] ?? getNewest(1)[0]
-  const featuredRest    = curatorPicks.slice(1, 4)
+  const community       = getCommunityEntries(9)
   const discussed       = getMostDiscussed(4)
   const newest          = getNewest(9)
   const archetypeCounts = getArchetypeCounts()
@@ -282,6 +304,17 @@ export default function ArchivePage() {
         ) : (
           /* ── Discovery view ────────────────────────────────────────────── */
           <>
+
+            {/* 0. Community submissions — newest user-published entries first */}
+            {community.length > 0 && (
+              <GallerySection label={T.community}>
+                <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 md:grid-cols-3">
+                  {community.map((entry) => (
+                    <GalleryCard key={entry.id} entry={entry} T={T} />
+                  ))}
+                </div>
+              </GallerySection>
+            )}
 
             {/* 1. Curator Picks — hero + grid of curated entries */}
             {curatorPicks.length > 0 && (

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import PhotoUploader, { MIN_PHOTOS } from '../components/PhotoUploader'
 import { analyzeAll } from '../utils/analyzeImage'
+import { saveStudyResults } from '../utils/resultsStorage'
+import { recompressDataUrl } from '../utils/imageDataUrl'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
 
@@ -11,7 +13,7 @@ import { translations } from '../i18n'
  * JPEG data URL.  Keeping the preview under ~150 KB per image prevents
  * sessionStorage quota errors when analysing 3–5 photos.
  */
-function fileToDataUrl(file, maxDim = 800) {
+function fileToDataUrl(file, maxDim = 640) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onerror = () => reject(new Error(`Cannot read file: ${file.name}`))
@@ -26,7 +28,7 @@ function fileToDataUrl(file, maxDim = 800) {
         canvas.width = w
         canvas.height = h
         canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-        resolve(canvas.toDataURL('image/jpeg', 0.82))
+        resolve(canvas.toDataURL('image/jpeg', 0.75))
       }
       img.src = evt.target.result
     }
@@ -59,12 +61,23 @@ export default function UploadPage() {
 
       const { ranked, portfolio } = await analyzeAll(stable, lang)
 
-      sessionStorage.setItem('firstphoto_results', JSON.stringify({
-        ranked: ranked.map(({ id, preview, name, rank, analysis }) => ({
-          id, preview, name, rank, analysis,
-        })),
-        portfolio,
-      }))
+      if (ranked.length !== stable.length) {
+        throw new Error(`Analysis returned ${ranked.length} photos, expected ${stable.length}`)
+      }
+
+      const lean = ranked.map(({ file: _f, ...rest }) => rest)
+
+      try {
+        saveStudyResults(lean, portfolio)
+      } catch {
+        const smaller = await Promise.all(
+          lean.map(async (photo) => ({
+            ...photo,
+            preview: await recompressDataUrl(photo.preview, 400, 0.6),
+          }))
+        )
+        saveStudyResults(smaller, portfolio)
+      }
 
       navigate('/results')
     } catch (err) {

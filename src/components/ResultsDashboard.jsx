@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
+import { SeriesPhotoGrid } from './SeriesPhotoStrip'
+import { getSeriesPreviews } from '../utils/photoSeries'
 
 // ─── Vote helpers (localStorage) ──────────────────────────────────────────────
 
@@ -115,16 +117,24 @@ const ROLE_LABEL_KEY = {
   closing:    'sequence_closing',
 }
 
-function resolveSequence(ranked, portfolio) {
-  if (portfolio?.suggested_sequence?.items?.length) {
-    return portfolio.suggested_sequence
+function resolveSequence(ranked, portfolio, photos) {
+  const count = photos?.length ?? ranked.length
+  const seq   = portfolio?.suggested_sequence
+
+  if (seq?.items?.length === count && seq?.order?.length === count) {
+    return seq
   }
-  const items = ranked.map((photo, i) => ({
-    index:  i,
-    role:   i === 0 ? 'opening' : i === ranked.length - 1 ? 'closing' : 'supporting',
-    reason: photo.analysis.editorial.firstImpression ?? '',
-  }))
-  return { order: ranked.map((_, i) => i), items }
+
+  const items = (photos ?? ranked).map((photo, i) => {
+    const rankedIdx = ranked.findIndex((r) => r.id === photo.id)
+    const index = rankedIdx >= 0 ? rankedIdx : i
+    return {
+      index,
+      role:   i === 0 ? 'opening' : i === count - 1 ? 'closing' : 'supporting',
+      reason: ranked[index]?.analysis?.editorial?.firstImpression ?? '',
+    }
+  })
+  return { order: items.map((i) => i.index), items }
 }
 
 function resolveSeriesObservation(portfolio, ranked) {
@@ -140,15 +150,47 @@ function resolveSeriesObservation(portfolio, ranked) {
 
 // ─── SummaryView — sequence-first, identity secondary ─────────────────────────
 
-function SummaryView({ ranked, portfolio, T }) {
-  const sequence = resolveSequence(ranked, portfolio)
-  const series   = resolveSeriesObservation(portfolio, ranked)
-  const identity = portfolio?.visual_identity ?? ranked[0]?.analysis?.editorial?.archetype ?? ''
+function getRankedPhoto(ranked, photos, index) {
+  if (ranked[index]?.preview) return ranked[index]
+  const photo = photos?.[index]
+  if (!photo) return ranked[index]
+  return {
+    ...ranked.find((r) => r.id === photo.id),
+    ...photo,
+    preview: photo.preview,
+  }
+}
 
-  const roleLabel = (role) => T[ROLE_LABEL_KEY[role]] ?? role
+function SummaryView({ ranked, portfolio, photos, T }) {
+  const sequence   = resolveSequence(ranked, portfolio, photos)
+  const series     = resolveSeriesObservation(portfolio, ranked)
+  const identity   = portfolio?.visual_identity ?? ranked[0]?.analysis?.editorial?.archetype ?? ''
+  const allPhotos  = getSeriesPreviews(photos, ranked)
+
+  const roleLabel  = (role) => T[ROLE_LABEL_KEY[role]] ?? role
+  const countLabel = T.series_count.replace('{n}', allPhotos.length)
 
   return (
     <section className="py-12">
+
+      {/* Your Visual Series — all uploaded photographs together */}
+      <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
+        {T.series_label}
+      </p>
+      <p className="mt-2 max-w-lg text-sm leading-relaxed text-[rgba(15,15,15,0.48)]">
+        {T.series_intro}
+      </p>
+      <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.32)]">
+        {countLabel}
+      </p>
+
+      <SeriesPhotoGrid
+        photos={allPhotos}
+        alt={T.series_label}
+        className="mt-6"
+      />
+
+      <div className="my-10 border-t border-[rgba(15,15,15,0.10)]" />
 
       {/* Suggested Sequence */}
       <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
@@ -160,11 +202,13 @@ function SummaryView({ ranked, portfolio, T }) {
 
       <div className="mt-8 space-y-6">
         {sequence.items.map((item, seqIdx) => {
-          const photo = ranked[item.index]
-          if (!photo) return null
+          const photo = getRankedPhoto(ranked, photos, item.index)
+            ?? photos?.[seqIdx]
+            ?? ranked[item.index]
+          if (!photo?.preview) return null
           return (
             <div
-              key={photo.id}
+              key={photo.id ?? seqIdx}
               className="flex gap-4 border-b border-[rgba(15,15,15,0.07)] pb-6 last:border-0 last:pb-0 sm:gap-6"
             >
               <span className="w-6 shrink-0 pt-1 font-display text-sm text-[rgba(15,15,15,0.22)]">
@@ -502,18 +546,20 @@ function SupportEntry({ photo, isFirst, T }) {
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export default function ResultsDashboard({ ranked, portfolio }) {
+export default function ResultsDashboard({ ranked, portfolio, photos }) {
   const { lang } = useLang()
   const T = translations[lang].dashboard
   const [showFull, setShowFull] = useState(false)
 
   if (!ranked || ranked.length === 0) return null
 
+  const displayPhotos = photos?.length ? photos : ranked
+
   return (
     <div>
 
-      {/* ── Always visible: identity + photo + 3 insights ── */}
-      <SummaryView ranked={ranked} portfolio={portfolio} T={T} />
+      {/* ── Always visible: full series + sequence + observation ── */}
+      <SummaryView ranked={ranked} portfolio={portfolio} photos={displayPhotos} T={T} />
 
       {/* ── Expandable full analysis ── */}
       <div className="border-t border-[rgba(15,15,15,0.12)]">

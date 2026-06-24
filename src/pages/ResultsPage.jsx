@@ -5,40 +5,34 @@ import ResultsDashboard from '../components/ResultsDashboard'
 import PublishSection from '../components/PublishSection'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
+import { loadStudyResults } from '../utils/resultsStorage'
 
 export default function ResultsPage() {
   const navigate = useNavigate()
   const [ranked,    setRanked]    = useState(null)
   const [portfolio, setPortfolio] = useState(null)
+  const [photos,    setPhotos]    = useState(null)
   const { lang } = useLang()
   const T = translations[lang].results
 
   useEffect(() => {
-    const raw = sessionStorage.getItem('firstphoto_results')
+    const data = loadStudyResults()
 
-    if (!raw) {
+    if (!data?.ranked?.length || !data.photos?.length) {
       navigate('/upload')
       return
     }
 
-    try {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) {
-        setRanked(parsed)
-      } else {
-        setRanked(parsed.ranked)
-        setPortfolio(parsed.portfolio ?? null)
-      }
-    } catch {
-      navigate('/upload')
-    }
+    setRanked(data.ranked)
+    setPortfolio(data.portfolio)
+    setPhotos(data.photos)
   }, [navigate])
 
   const studyDate = new Date().toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', {
     month: 'long', day: 'numeric', year: 'numeric',
   })
 
-  if (!ranked) {
+  if (!ranked || !photos) {
     return (
       <Layout>
         <div className="flex min-h-[50vh] items-center justify-center text-[11px] uppercase tracking-[0.18em] text-[rgba(15,15,15,0.35)]">
@@ -48,7 +42,7 @@ export default function ResultsPage() {
     )
   }
 
-  const countLabel = ranked.length === 1 ? T.photo_1 : T.photos_n
+  const countLabel = photos.length === 1 ? T.photo_1 : T.photos_n
 
   return (
     <Layout>
@@ -67,13 +61,13 @@ export default function ResultsPage() {
             </Link>
           </div>
           <p className="mt-4 text-[11px] text-[rgba(15,15,15,0.42)]">
-            {ranked.length} {countLabel} · {studyDate} · Canvas API
+            {photos.length} {countLabel} · {studyDate} · Canvas API
           </p>
         </div>
 
-        <ResultsDashboard ranked={ranked} portfolio={portfolio} />
+        <ResultsDashboard ranked={ranked} portfolio={portfolio} photos={photos} />
 
-        <PublishSection ranked={ranked} />
+        <PublishSection ranked={ranked} portfolio={portfolio} photos={photos} />
 
       </div>
     </Layout>

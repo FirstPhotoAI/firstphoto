@@ -4,6 +4,7 @@ import Layout from '../components/Layout'
 import { IDENTITIES, DICT_LABELS, findIdentity } from '../data/identities'
 import { getPublicEntries, getNoteCount } from '../data/archiveStore'
 import { useLang } from '../contexts/LangContext'
+import SeriesPhotoStrip from '../components/SeriesPhotoStrip'
 
 // ─── Tiny gallery thumbnail ────────────────────────────────────────────────────
 
@@ -12,13 +13,9 @@ function EntryThumb({ entry }) {
   return (
     <Link
       to={`/archive/${entry.id}`}
-      className="group block overflow-hidden border border-[rgba(15,15,15,0.10)]"
+      className="group block"
     >
-      <img
-        src={entry.photo}
-        alt={entry.archetype || entry.category}
-        className="aspect-[3/4] w-full object-cover transition-opacity duration-300 group-hover:opacity-88"
-      />
+      <SeriesPhotoStrip entry={entry} alt={entry.archetype || entry.category} />
       {noteCount > 0 && (
         <p className="px-2 py-1.5 text-[10px] text-[rgba(15,15,15,0.36)]">
           {noteCount} {noteCount === 1 ? 'nota' : 'notas'}
