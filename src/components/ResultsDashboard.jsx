@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
 import { SeriesPhotoGrid } from './SeriesPhotoStrip'
 import { getSeriesPreviews } from '../utils/photoSeries'
+import { logSeries } from '../utils/debugSeries'
 
 // ─── Vote helpers (localStorage) ──────────────────────────────────────────────
 
@@ -551,9 +552,18 @@ export default function ResultsDashboard({ ranked, portfolio, photos }) {
   const T = translations[lang].dashboard
   const [showFull, setShowFull] = useState(false)
 
-  if (!ranked || ranked.length === 0) return null
-
   const displayPhotos = photos?.length ? photos : ranked
+  const seriesPreviews = getSeriesPreviews(displayPhotos, ranked)
+
+  useEffect(() => {
+    logSeries('ResultsDashboard: props', {
+      photosLen:   photos?.length ?? 0,
+      rankedLen:   ranked?.length ?? 0,
+      previewsLen: seriesPreviews.length,
+    })
+  }, [photos, ranked, seriesPreviews.length])
+
+  if (!ranked || ranked.length === 0) return null
 
   return (
     <div>

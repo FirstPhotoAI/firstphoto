@@ -1,14 +1,16 @@
 ﻿import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import Layout from '../components/Layout'
 import ResultsDashboard from '../components/ResultsDashboard'
 import PublishSection from '../components/PublishSection'
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
-import { loadStudyResults } from '../utils/resultsStorage'
+import { loadStudyResults, normalizeStudy } from '../utils/resultsStorage'
+import { logSeries, summarizeStudy } from '../utils/debugSeries'
 
 export default function ResultsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [ranked,    setRanked]    = useState(null)
   const [portfolio, setPortfolio] = useState(null)
   const [photos,    setPhotos]    = useState(null)
@@ -16,17 +18,30 @@ export default function ResultsPage() {
   const T = translations[lang].results
 
   useEffect(() => {
-    const data = loadStudyResults()
+    logSeries('ResultsPage: location.state', location.state?.study
+      ? summarizeStudy(location.state.study)
+      : null)
 
-    if (!data?.ranked?.length || !data.photos?.length) {
+    const fromStorage = loadStudyResults()
+    logSeries('ResultsPage: sessionStorage read', summarizeStudy(fromStorage))
+
+    const raw = fromStorage ?? (location.state?.study ? normalizeStudy(location.state.study) : null)
+    const result = normalizeStudy(raw)
+
+    logSeries('ResultsPage: normalized result', {
+      ...summarizeStudy(result),
+      photo: result?.photo ? `${result.photo.slice(0, 32)}…` : null,
+    })
+
+    if (!result?.ranked?.length || !result.photos?.length) {
       navigate('/upload')
       return
     }
 
-    setRanked(data.ranked)
-    setPortfolio(data.portfolio)
-    setPhotos(data.photos)
-  }, [navigate])
+    setRanked(result.ranked)
+    setPortfolio(result.portfolio)
+    setPhotos(result.photos)
+  }, [navigate, location.state])
 
   const studyDate = new Date().toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', {
     month: 'long', day: 'numeric', year: 'numeric',

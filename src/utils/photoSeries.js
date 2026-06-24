@@ -4,7 +4,7 @@
 
 export function getSeriesPreviews(uploadedPhotos, ranked) {
   const source = uploadedPhotos?.length ? uploadedPhotos : ranked ?? []
-  return source.map((p) => p.preview).filter((url) => url?.startsWith('data:') || url?.startsWith('/'))
+  return source.map((p) => p.preview).filter(Boolean)
 }
 
 export function getOrderedPreviews(ranked, portfolio, uploadedPhotos) {

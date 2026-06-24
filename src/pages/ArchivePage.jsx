@@ -21,6 +21,7 @@ import {
 import { useLang } from '../contexts/LangContext'
 import { translations } from '../i18n'
 import SeriesPhotoStrip from '../components/SeriesPhotoStrip'
+import { logSeries } from '../utils/debugSeries'
 
 // ─── Post card ─────────────────────────────────────────────────────────────────
 
@@ -185,7 +186,16 @@ export default function ArchivePage() {
   const [activeIdentity, setActiveIdentity] = useState(null)
 
   const refreshEntries = useCallback(() => {
-    setAllEntries(getPublicEntries())
+    const entries = getPublicEntries()
+    logSeries('ArchivePage: getEntries()', {
+      total: entries.length,
+      series: entries.map((e) => ({
+        id: e.id?.slice(0, 8),
+        photoCount: e.photoCount,
+        photosLen: e.photos?.length ?? 0,
+      })),
+    })
+    setAllEntries(entries)
   }, [])
 
   useEffect(() => {

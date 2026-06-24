@@ -47,6 +47,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import { logSeries, summarizeEntry } from '../utils/debugSeries'
+
 const ARCHIVE_KEY = 'firstphoto_archive'
 const NOTES_KEY   = 'firstphoto_archive_notes'
 
@@ -89,9 +91,30 @@ export const ARCHETYPES_EN = [
 
 // ─── Entries ──────────────────────────────────────────────────────────────────
 
+/** Normalize legacy + new entry shapes to always expose photos[], photo, photoCount. */
+export function normalizeEntry(entry) {
+  if (!entry) return entry
+
+  const photos = Array.isArray(entry.photos) && entry.photos.length > 0
+    ? entry.photos
+    : entry.photo
+      ? [entry.photo]
+      : []
+
+  const photo = photos[0] || entry.photo || null
+
+  return {
+    ...entry,
+    photos,
+    photo,
+    photoCount: photos.length,
+  }
+}
+
 export function getEntries() {
   try {
-    return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]')
+    const raw = JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]')
+    return Array.isArray(raw) ? raw.map(normalizeEntry) : []
   } catch {
     return []
   }
@@ -105,9 +128,7 @@ export function getPublicEntries() {
 /** Returns all photographs for an entry (series-aware, backward compatible). */
 export function getEntryPhotos(entry) {
   if (!entry) return []
-  if (Array.isArray(entry.photos) && entry.photos.length > 0) return entry.photos
-  if (entry.photo) return [entry.photo]
-  return []
+  return normalizeEntry(entry).photos
 }
 
 /**
@@ -115,38 +136,45 @@ export function getEntryPhotos(entry) {
  */
 export const ARCHIVE_UPDATED_EVENT = 'firstphoto:archive-updated'
 
-export function addEntry({
-  photo, photos = [], title, category, firstImpression, observation,
-  archetype, keywords, caption = '', creatorName = '',
-  country = '', lang = 'es',
-  isPublic = false, isCurated = false,
-}) {
-  const photoList = photos.length > 0 ? photos : (photo ? [photo] : [])
-  const cover     = photoList[0] ?? photo ?? ''
-  const now       = Date.now()
+export function addEntry(input) {
+  logSeries('archiveStore: addEntry(input)', {
+    photosLen: Array.isArray(input.photos) ? input.photos.length : 0,
+    hasCover:  !!input.photo,
+    isPublic:  input.isPublic,
+  })
 
-  const entry = {
+  const photos = Array.isArray(input.photos) && input.photos.length > 0
+    ? input.photos
+    : input.photo
+      ? [input.photo]
+      : []
+
+  const photo = photos[0] || input.photo || null
+  const now   = Date.now()
+
+  const entry = normalizeEntry({
     id:              crypto.randomUUID(),
-    photo:           cover,
-    photos:          photoList,
-    photoCount:      photoList.length,
-    title:           title?.trim()       ?? '',
-    category,
-    firstImpression,
-    observation,
-    archetype:       archetype           ?? '',
-    keywords:        Array.isArray(keywords) ? keywords : [],
-    caption:         caption?.trim()     ?? '',
-    creatorName:     creatorName?.trim() ?? '',
-    country:         country?.trim()     ?? '',
-    lang:            lang                ?? 'es',
-    isPublic,
-    isCurated,
+    photo,
+    photos,
+    photoCount:      photos.length,
+    title:           input.title?.trim()       ?? '',
+    category:        input.category,
+    firstImpression: input.firstImpression,
+    observation:     input.observation,
+    archetype:       input.archetype           ?? '',
+    keywords:        Array.isArray(input.keywords) ? input.keywords : [],
+    caption:         input.caption?.trim()     ?? '',
+    creatorName:     input.creatorName?.trim() ?? '',
+    country:         input.country?.trim()     ?? '',
+    lang:            input.lang                ?? 'es',
+    isPublic:        input.isPublic            ?? false,
+    isCurated:       input.isCurated           ?? false,
     publishedAt:     now,
     createdAt:       now,
-  }
+  })
 
   const entries = getEntries()
+  logSeries('archiveStore: entries before', entries.length)
   entries.unshift(entry)
 
   try {
@@ -157,6 +185,10 @@ export function addEntry({
     }
     throw err
   }
+
+  const saved = getEntries()
+  logSeries('archiveStore: entries after', saved.length)
+  logSeries('archiveStore: new entry', summarizeEntry(entry))
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(ARCHIVE_UPDATED_EVENT, { detail: entry }))
