@@ -8,7 +8,7 @@ import {
   getPublicEntries,
   getArchetypeCounts,
   getCountryCounts,
-  getRecentEntries,
+  getHomepageRecentWorks,
 } from '../data/archiveStore'
 import { IDENTITIES } from '../data/identities'
 
@@ -93,7 +93,7 @@ export default function LandingPage() {
       countries:  Object.keys(countryCounts).length,
     })
 
-    setRecentEntries(getRecentEntries(6, 30))
+    setRecentEntries(getHomepageRecentWorks(12))
   }, [])
 
   const featuredIdentities = IDENTITIES.filter((id) =>
@@ -104,11 +104,7 @@ export default function LandingPage() {
     <Layout>
 
       {/* ── 1. Hero statement ─────────────────────────────────────────────────── */}
-      {/*
-        Mobile: compact — headline visible, then photograph immediately below.
-        Desktop: generous — full editorial spacing.
-      */}
-      <section className="mx-auto max-w-5xl px-6 pt-7 pb-5 md:pt-14 md:pb-10">
+      <section className="mx-auto max-w-5xl px-6 pt-7 pb-6 md:pt-14 md:pb-10">
         <p className="text-[9px] uppercase tracking-[0.20em] text-[rgba(15,15,15,0.34)]">
           FirstPhoto — {T.site_label}
         </p>
@@ -117,78 +113,12 @@ export default function LandingPage() {
         </h1>
       </section>
 
-      {/* Divider: hidden on mobile so hero flows directly into photograph */}
-      <div className="hidden border-t border-[rgba(15,15,15,0.10)] md:block" />
-
-      {/* ── 2. Featured story ─────────────────────────────────────────────────── */}
-      {/*
-        Mobile:  flex-col
-          • Photograph fills the screen first (50vh, full width)
-          • Identity + caption immediately below, no padding gap
-          • CTA at the end
-        Desktop: flex-row, text left / image right, generous spacing
-      */}
-      <section className="mx-auto max-w-5xl px-6 pt-0 pb-8 md:py-12">
-
-        {/* Section label — desktop only; on mobile the image speaks first */}
-        <p className="mb-6 hidden text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)] md:block">
-          {T.featured_identity}
-        </p>
-
-        <div className="flex flex-col gap-0 md:flex-row md:items-center md:gap-10 lg:gap-14">
-
-          {/* Photograph — order-first on mobile, order-last on desktop */}
-          <div
-            className="order-first w-full shrink-0 md:order-last md:w-[55%]"
-            style={{ maxWidth: '760px' }}
-          >
-            <div className="overflow-hidden md:border md:border-[rgba(15,15,15,0.10)]">
-              <img
-                src={featuredEntry?.photo ?? HERO_IMAGE}
-                alt={featuredEntry?.archetype ?? 'Featured photograph'}
-                className="block w-full object-cover"
-                style={{
-                  aspectRatio: '4 / 3',
-                  maxHeight: '52vh',
-                  objectPosition: 'center 30%',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Editorial caption — directly below image on mobile */}
-          <div className="order-last mt-5 md:order-first md:mt-0 md:flex-1 md:py-2">
-            {/* Mobile only: tiny identity label above archetype name */}
-            <p className="mb-2 text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)] md:hidden">
-              {T.featured_identity}
-            </p>
-            <p className="font-display text-xl font-light text-[#0f0f0f] md:text-3xl">
-              {featuredEntry?.archetype ?? '\u00A0'}
-            </p>
-            {featuredEntry?.caption && (
-              <p className="mt-3 text-sm leading-relaxed text-[rgba(15,15,15,0.55)]">
-                {featuredEntry.caption}
-              </p>
-            )}
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/archive" className="btn-primary">{T.preview_cta}</Link>
-              {featuredEntry && (
-                <Link to={`/archive/${featuredEntry.id}`} className="btn-ghost">
-                  {T.featured_view}
-                </Link>
-              )}
-            </div>
-          </div>
-
-        </div>
-      </section>
-
       <div className="border-t border-[rgba(15,15,15,0.10)]" />
 
-      {/* ── 3. Recent works — 6-entry grid, newest first ──────────────────────── */}
-      <section className="mx-auto max-w-5xl px-6 py-12 md:py-14">
+      {/* ── 2. Recent works — community first, 2× mobile / 4× desktop ─────────── */}
+      <section className="mx-auto max-w-5xl px-6 py-8 md:py-12">
 
-        <div className="mb-8 flex items-end justify-between">
+        <div className="mb-6 flex items-end justify-between">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
             {T.recent_label}
           </p>
@@ -200,9 +130,8 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        {/* 6-entry portrait grid */}
         {recentEntries.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-3">
             {recentEntries.map((entry) => (
               <Link key={entry.id} to={`/archive/${entry.id}`} className="group block">
                 <div className="overflow-hidden border border-[rgba(15,15,15,0.10)]">
@@ -213,7 +142,7 @@ export default function LandingPage() {
                   />
                 </div>
                 {entry.archetype && (
-                  <p className="mt-2 truncate text-[9px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.38)]">
+                  <p className="mt-1.5 truncate text-[9px] uppercase tracking-[0.14em] text-[rgba(15,15,15,0.38)]">
                     {entry.archetype}
                   </p>
                 )}
@@ -222,18 +151,18 @@ export default function LandingPage() {
           </div>
         )}
 
-        {/* Live counts — archive proof */}
-        <div className="mt-10 grid grid-cols-3 gap-6 border-t border-[rgba(15,15,15,0.10)] pt-8">
+        {/* Archive stats — proof the collection is growing */}
+        <div className="mt-8 grid grid-cols-3 gap-4 border-t border-[rgba(15,15,15,0.10)] pt-8 md:mt-10 md:gap-6">
           {[
             { value: archiveStats.works,      label: T.stat_works },
             { value: archiveStats.identities, label: T.stat_identities },
             { value: archiveStats.countries,  label: T.stat_countries },
           ].map(({ value, label }) => (
             <div key={label}>
-              <p className="font-display text-4xl font-light text-[#0f0f0f] md:text-5xl">
+              <p className="font-display text-3xl font-light text-[#0f0f0f] md:text-5xl">
                 {value}
               </p>
-              <p className="mt-2 text-[9px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.40)]">
+              <p className="mt-1.5 text-[9px] uppercase tracking-[0.16em] text-[rgba(15,15,15,0.40)]">
                 {label}
               </p>
             </div>
@@ -243,9 +172,9 @@ export default function LandingPage() {
 
       <div className="border-t border-[rgba(15,15,15,0.10)]" />
 
-      {/* ── 4. Visual Identities ─────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-5xl px-6 py-12 md:py-14">
-        <div className="mb-10 flex items-end justify-between">
+      {/* ── 3. Visual Identities ─────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-5xl px-6 py-10 md:py-14">
+        <div className="mb-8 flex items-end justify-between md:mb-10">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
             {T.identities_label}
           </p>
@@ -266,7 +195,60 @@ export default function LandingPage() {
 
       <div className="border-t border-[rgba(15,15,15,0.10)]" />
 
-      {/* ── 5. Creator Edition — exhibition announcement ──────────────────────── */}
+      {/* ── 4. Featured story — smaller image, supports the narrative ─────────── */}
+      <section className="mx-auto max-w-5xl px-6 py-10 md:py-12">
+
+        <p className="mb-6 text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
+          {T.featured_identity}
+        </p>
+
+        <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-10 lg:gap-12">
+
+          {/* Editorial text — left on desktop */}
+          <div className="md:flex-1 md:py-1">
+            <p className="font-display text-xl font-light text-[#0f0f0f] md:text-2xl">
+              {featuredEntry?.archetype ?? '\u00A0'}
+            </p>
+            {featuredEntry?.caption && (
+              <p className="mt-3 text-sm leading-relaxed text-[rgba(15,15,15,0.55)]">
+                {featuredEntry.caption}
+              </p>
+            )}
+            <div className="mt-6 flex flex-wrap gap-3">
+              {featuredEntry && (
+                <Link to={`/archive/${featuredEntry.id}`} className="btn-primary">
+                  {T.featured_view}
+                </Link>
+              )}
+              <Link to="/archive" className="btn-ghost">{T.preview_cta}</Link>
+            </div>
+          </div>
+
+          {/* Photograph — constrained, ~40% shorter than previous hero treatment */}
+          <div
+            className="w-full shrink-0 md:w-[42%]"
+            style={{ maxWidth: '480px' }}
+          >
+            <div className="overflow-hidden border border-[rgba(15,15,15,0.10)]">
+              <img
+                src={featuredEntry?.photo ?? HERO_IMAGE}
+                alt={featuredEntry?.archetype ?? 'Featured photograph'}
+                className="block w-full object-cover"
+                style={{
+                  aspectRatio: '4 / 3',
+                  maxHeight: '31vh',
+                  objectPosition: 'center 30%',
+                }}
+              />
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <div className="border-t border-[rgba(15,15,15,0.10)]" />
+
+      {/* ── 5. Creator Edition ─────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 py-14 md:py-20">
         <div className="flex items-center gap-4">
           <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
@@ -304,7 +286,7 @@ export default function LandingPage() {
 
       <div className="border-t border-[rgba(15,15,15,0.10)]" />
 
-      {/* ── 7. Upload Invitation ──────────────────────────────────────────────── */}
+      {/* ── 6. Join the Archive ───────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 py-14 md:py-16">
         <p className="mb-5 text-[10px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.40)]">
           {T.share_label}

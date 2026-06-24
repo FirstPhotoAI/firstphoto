@@ -256,3 +256,20 @@ export function getRecentEntries(n = 3, days = 30) {
   const recent = all.filter((e) => e.publishedAt >= cutoff)
   return (recent.length >= n ? recent : all).slice(0, n)
 }
+
+/** Seed/founder content — used only to fill the archive until community submissions grow. */
+export function isFounderEntry(entry) {
+  return entry?.creatorName === 'FirstPhoto'
+}
+
+/**
+ * Homepage recent works: community submissions first (newest), founder seed second.
+ * As community entries accumulate they naturally replace founder photos in the grid.
+ */
+export function getHomepageRecentWorks(n = 12) {
+  const limit = Math.min(Math.max(n, 6), 12)
+  const byNewest = getPublicEntries().sort((a, b) => b.publishedAt - a.publishedAt)
+  const community = byNewest.filter((e) => !isFounderEntry(e))
+  const founder   = byNewest.filter((e) => isFounderEntry(e))
+  return [...community, ...founder].slice(0, limit)
+}
