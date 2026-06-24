@@ -115,38 +115,49 @@ export default function LandingPage() {
 
       <div className="border-t border-[rgba(15,15,15,0.10)]" />
 
-      {/* ── 2. Featured story — two-column editorial layout ───────────────────── */}
-      <section className="mx-auto max-w-5xl px-6 py-12 md:py-14">
+      {/* ── 2. Featured story — text left, image right ────────────────────────── */}
+      <section className="mx-auto max-w-5xl px-6 py-10 md:py-12">
 
         <p className="mb-8 text-[9px] uppercase tracking-[0.22em] text-[rgba(15,15,15,0.38)]">
           {T.featured_identity}
         </p>
 
-        <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-12 lg:gap-16">
+        {/*
+          Mobile:  flex-col — image first, caption below
+          Desktop: flex-row — editorial text left (~40%), image right (~60%)
+        */}
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-10 lg:gap-14">
 
-          {/* Left — portrait photograph, hard-limited */}
-          <div className="w-full shrink-0 md:w-[45%]" style={{ maxWidth: '580px' }}>
+          {/* Mobile: image appears first via order-first; desktop: pushed to right via order-last */}
+          <div
+            className="w-full shrink-0 order-first md:order-last md:w-[55%]"
+            style={{ maxWidth: '760px' }}
+          >
             <div className="overflow-hidden border border-[rgba(15,15,15,0.10)]">
               <img
                 src={featuredEntry?.photo ?? HERO_IMAGE}
                 alt={featuredEntry?.archetype ?? 'Featured photograph'}
-                className="block w-full object-cover max-h-[50vh] md:max-h-[68vh]"
-                style={{ aspectRatio: '3 / 4', objectPosition: 'center 30%' }}
+                className="block w-full object-cover"
+                style={{
+                  aspectRatio: '4 / 3',
+                  maxHeight: '42vh',
+                  objectPosition: 'center 30%',
+                }}
               />
             </div>
           </div>
 
-          {/* Right — museum wall caption */}
-          <div className="flex flex-col justify-center md:flex-1 md:py-4">
+          {/* Editorial text: right on mobile (after image), left on desktop */}
+          <div className="order-last md:order-first md:flex-1 md:py-2">
             <p className="font-display text-2xl font-light text-[#0f0f0f] md:text-3xl">
               {featuredEntry?.archetype ?? '\u00A0'}
             </p>
             {featuredEntry?.caption && (
-              <p className="mt-5 text-sm leading-relaxed text-[rgba(15,15,15,0.58)]">
+              <p className="mt-4 text-sm leading-relaxed text-[rgba(15,15,15,0.55)]">
                 {featuredEntry.caption}
               </p>
             )}
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-7 flex flex-wrap gap-3">
               <Link to="/archive" className="btn-primary">{T.preview_cta}</Link>
               {featuredEntry && (
                 <Link to={`/archive/${featuredEntry.id}`} className="btn-ghost">
@@ -155,6 +166,7 @@ export default function LandingPage() {
               )}
             </div>
           </div>
+
         </div>
       </section>
 
